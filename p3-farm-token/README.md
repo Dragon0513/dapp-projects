@@ -346,7 +346,7 @@ const { activate, deactivate, active, library } = useWeb3React();
 
 I have created all the UI in `App` component and moved all the functions and state management to a context. Feel free to implement the client side as you like.
 
-In `react-app/src/context/appContextProvider/index.tsx`, I have used `useWeb3React` hook to create some functions to interact with our `MyToken` and `FarmToken` smart contracts. Read the comments in the file to understand what's going on. Some important function are the following:
+In `react-app/src/context/appContextProvider/index.tsx`, I have used `useWeb3React` hook to create some functions to interact with our `MyToken` and `FarmToken` smart contracts. Read the comments in the file to understand what's going on. Some important functions are the following:
 
 ```ts
 // Connect to MetaMask.
