@@ -95,13 +95,13 @@ contract MyToken is ERC20 {
 
 ## Step 6: Write `FarmToken` Contract
 
-In `smartContracts/contracts/` directory, create `FarmToken.sol`. Here, we are creating our `FarmToken` smart contract that also inherits from `ERC20` contract from `@openzeppelin`. We are giving our token the name of `FarmToken` and the symbol of `FRM`. We have also declared (and initialized in the constructor) a state varible to interact with `MyToken` contract. This time, we are minting no tokens at build time.
+In `smartContracts/contracts/` directory, create `FarmToken.sol`. Here, we are creating our `FarmToken` smart contract that also inherits from `ERC20` contract from `@openzeppelin`. We are giving our token the name of `FarmToken` and the symbol of `FRM`. We have also declared (and initialized in the constructor) a state variable to interact with `MyToken` contract. This time, we are minting no tokens at build time.
 
 We have some functions here as well.
 
-1.  With `deposit`, a user can deposit a certain amount of `MTKN` to `FarmToken` contract. In return, `FarmToken` contract mints and sends and equal amount of `FRM` tokens to the user's address.
+1.  With `deposit`, a user can deposit a certain amount of `MTKN` tokens to `FarmToken` contract. In return, `FarmToken` contract mints and sends and equal amount of `FRM` tokens to the user's address.
 2.  With `withDraw`, a user can return a certain amoutn of `FRM` tokens back to `FarmToken` contract and get an equal amount of `MTKN` from `FarmToken` contract. `FarmToken` contract, then, burns the `FRM` tokens returned by the user.
-3.  With `balance`, anyone can check the amount `MTKN` currently in possession of `FarmToken` contract.
+3.  With `balance`, anyone can check the amount of `MTKN` tokens currently in possession of `FarmToken` contract.
 
 ```js
 // SPDX-License-Identifier: MIT
@@ -251,7 +251,6 @@ Add these scripts in `react-app/package.json`.
 
 ```json
 "scripts": {
-  // ... Other scripts
   "generate-types": "typechain --target=web3-v1 --out-dir=\"src/contracts/types\" \"src/contracts/abi/*.json\"",
   "postinstall": "yarn generate-types"
 }
@@ -263,6 +262,8 @@ Go to the following links and copy the ABIs of your `MyToken` and `FarmToken` co
 https://ropsten.etherscan.io/address/YOUR_MY_TOKEN_ADDRESS#code
 https://ropsten.etherscan.io/address/YOUR_FARM_TOKEN_ADDRESS#code
 ```
+
+**Note: If you don't verify your smart contract source code on EtherScan, you won't be able to get the ABIs from there!**
 
 Now, generate TypeScript types for your smart contracts in `react-app/src/contracts/types/` directory with the following command:
 
