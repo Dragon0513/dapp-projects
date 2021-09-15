@@ -1,0 +1,49 @@
+{
+  "name": "truffle-ts-starter",
+  "private": false,
+  "description": "A TypeScript template for truffle project.",
+  "version": "0.1.0",
+  "author": "Mian Muhammad Sharjeel Safdar <miansharjeelsafdar@gmail.com>",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "generate-types": "typechain --target=truffle-v5 \"build/*.json\"",
+    "postinstall": "yarn compile",
+    "migrate": "tsc -p ./tsconfig.migrate.json --outDir ./migrations && truffle migrate",
+    "typecheck": "tsc --noEmit",
+    "test": "truffle test",
+    "compile": "truffle compile && yarn generate-types",
+    "build": "yarn compile"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.3.2",
+    "@truffle/hdwallet-provider": "^1.5.0",
+    "@typechain/truffle-v5": "^2.0.0",
+    "@types/bn.js": "^4.11.6",
+    "@types/chai": "^4.2.11",
+    "@types/mocha": "^7.0.2",
+    "@types/web3": "^1.2.2",
+    "dotenv": "^10.0.0",
+    "truffle": "^5.1.22",
+    "typechain": "2.0.0",
+    "typescript": "4.1.5"
+  },
+  "devDependencies": {
+    "truffle-plugin-verify": "^0.5.15"
+  },
+  "keywords": [
+    "truffle",
+    "typescript",
+    "starter",
+    "ethereum",
+    "smart-contracts",
+    "solidity"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SharjeelSafdar/truffle-ts-starter"
+  },
+  "bugs": {
+    "url": "https://github.com/SharjeelSafdar/truffle-ts-starter/issues"
+  }
+}
