@@ -1,8 +1,8 @@
-const MyERC20Token = artifacts.require("MyERC20Token");
+const MyToken = artifacts.require("MyToken");
 const FarmToken = artifacts.require("FarmToken");
 
 module.exports = async callback => {
-  const myToken = await MyERC20Token.deployed();
+  const myToken = await MyToken.deployed();
   const farmToken = await FarmToken.deployed();
   const accounts = await web3.eth.getAccounts();
 
@@ -39,7 +39,7 @@ module.exports = async callback => {
     "MTKN"
   );
   console.log(
-    "Balance MyToken Before TokenFarm:",
+    "Balance MyToken Before FarmToken:",
     web3.utils.fromWei(balanceMyTokenBeforeFarmToken.toString()),
     "MTKN"
   );
@@ -57,7 +57,7 @@ module.exports = async callback => {
     "FRM"
   );
   console.log(
-    "Balance FarmToken Before TokenFarm:",
+    "Balance FarmToken Before FarmToken:",
     web3.utils.fromWei(balanceFarmTokenBeforeFarmToken.toString()),
     "FRM"
   );
@@ -76,7 +76,7 @@ module.exports = async callback => {
     "MTKN"
   );
   console.log(
-    "Balance MyToken Before TokenFarm:",
+    "Balance MyToken Before FarmToken:",
     web3.utils.fromWei(balanceMyTokenAfterFarmToken.toString()),
     "MTKN"
   );
@@ -92,7 +92,7 @@ module.exports = async callback => {
     "FRM"
   );
   console.log(
-    "Balance FarmToken Before TokenFarm:",
+    "Balance FarmToken Before FarmToken:",
     web3.utils.fromWei(balanceFarmTokenAfterFarmToken.toString()),
     "FRM"
   );
