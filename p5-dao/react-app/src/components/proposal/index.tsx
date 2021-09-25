@@ -109,7 +109,9 @@ const Proposal: FC = () => {
           </button>
           <button
             onClick={() => executeProposal(currentProposalId)}
-            disabled={loading || status !== ProposalStatus.Queued}
+            disabled={
+              loading || status !== ProposalStatus.Queued || timelockDelay > 0
+            }
           >
             Execute Proposal
           </button>
