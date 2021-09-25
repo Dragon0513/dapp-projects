@@ -3,7 +3,13 @@ import { useWeb3React } from "@web3-react/core";
 import { NoEthereumProviderError } from "@web3-react/injected-connector";
 import Web3 from "web3";
 import { injector } from "../../components/wallet";
-import { State, VoteType, Views, initialProposal } from "../../types";
+import {
+  State,
+  VoteType,
+  Views,
+  initialProposal,
+  initialState,
+} from "../../types";
 
 import { MyContract } from "../../contracts/types/MyContract";
 import { MyVoteToken } from "../../contracts/types/MyVoteToken";
@@ -19,34 +25,6 @@ const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 const MY_CONTRACT_ADDRESS = process.env.REACT_APP_MY_CONTRACT_ADDRESS;
 const MY_VOTE_TOKEN_ADDRESS = process.env.REACT_APP_MY_VOTE_TOKEN_ADDRESS;
 const MY_GOVERNOR_ADDRESS = process.env.REACT_APP_MY_GOVERNOR_ADDRESS;
-
-const initialState: State = {
-  loading: false,
-  errorMsg: "",
-  view: Views.Profile,
-  setView: () => {},
-  isEthereumAvailable: false,
-  connected: false,
-  connect: async () => {},
-  disconnect: () => {},
-  account: null,
-  voteTokenBalanceOfUser: 0,
-  votingPowerOfUser: 0,
-  delegateVotes: async () => {},
-  currentDelegatee: null,
-  proposalIds: [],
-  currentProposalId: "",
-  setCurrentProposalId: () => {},
-  currentProposal: initialProposal,
-  currentStateOfMyContract: 0,
-  currentBlock: 0,
-  proposeStateUpdate: async () => {},
-  getProposal: async () => {},
-  castVote: async () => {},
-  cancelProposal: async () => {},
-  queueProposal: async () => {},
-  executeProposal: async () => {},
-};
 
 const AppContext = createContext<State>(initialState);
 export const useAppContext = () => useContext(AppContext);
@@ -78,10 +56,17 @@ export const AppContextProvider: FC = ({ children }) => {
   const [currentStateOfMyContract, setCurrentState] = useState(0);
   const [currentBlock, setCurrentBlock] = useState(0);
   const ConnectToMetaMaskError = new Error("Connect to MetaMask!");
-  // const ErrorUpdatingOnSubscribedValue = new Error(
-  //   "Error updating on subscribed value."
-  // );
+  const ErrorSubscribingToNewBlocks = new Error(
+    "Error subscribing to new blocks."
+  );
 
+  /***************************************************************************/
+  /**************************** Utility Functions ****************************/
+  /***************************************************************************/
+
+  /**
+   * Resets error message state variable to an empty string.
+   */
   const resetError = () => {
     setErrorMsg("");
   };
@@ -105,6 +90,10 @@ export const AppContextProvider: FC = ({ children }) => {
     }
   };
 
+  /**
+   * Creates contract objects for `MyVoteToken`, `MyGovernor` and `MyContract`
+   * contracts.
+   */
   const createContractObjects = () => {
     errorWrapper(() => {
       if (!connected || !web3) {
@@ -126,15 +115,25 @@ export const AppContextProvider: FC = ({ children }) => {
     });
   };
 
+  /**
+   * Sets contract objects to null.
+   */
   const destroyContractObjects = () => {
     setMyContract(null);
     setVoteToken(null);
     setGovernor(null);
   };
 
+  /**
+   * Creates contract objects as soon as the user connects to MetaMask.
+   */
   useEffect(() => {
     createContractObjects();
   }, [web3]);
+
+  /****************************************************************************/
+  /******************* Functions for Connecting with Wallet *******************/
+  /****************************************************************************/
 
   /**
    * Connect to MetaMask wallet.
@@ -156,10 +155,13 @@ export const AppContextProvider: FC = ({ children }) => {
     });
   };
 
-  /******************* Profile *******************/
+  /****************************************************************************/
+  /************************ Functions for User Profile ************************/
+  /****************************************************************************/
 
   /**
-   * Delegates user's votes to the given address.
+   * Delegates user's votes to the given address. So that the delegatee can vote
+   * on your behalf. It will increase the delegatee's voting power.
    * @param delegatee Public address of the delegatee.
    */
   const delegateVotes = async (delegatee: string) => {
@@ -196,6 +198,9 @@ export const AppContextProvider: FC = ({ children }) => {
     });
   };
 
+  /**
+   * Gets the number of `MVTKN` tokens the user has in wallet.
+   */
   const getVoteTokenBalance = async () => {
     await errorWrapper(async () => {
       if (!connected || !web3 || !voteToken || !account) {
@@ -208,6 +213,9 @@ export const AppContextProvider: FC = ({ children }) => {
     });
   };
 
+  /**
+   * Gets the voting power of the user.
+   */
   const getVotingPower = async () => {
     await errorWrapper(async () => {
       if (!connected || !web3 || !voteToken || !account) {
@@ -220,14 +228,55 @@ export const AppContextProvider: FC = ({ children }) => {
     });
   };
 
+  /**
+   * This effect updates current user's `MVTKN` token balance, voting power and
+   * his/her delegatee. Besides the first render, this effect runs as soon as
+   * the user connects to MetaMask or changes account in his/her MetaMask
+   * wallet.
+   */
   useEffect(() => {
     getVoteTokenBalance();
     getVotingPower();
     getCurrentDelegatee();
   }, [voteToken, account]);
 
-  /******************* New Proposal *******************/
+  /***************************************************************************/
+  /***************** Functions for Fetching all Proposal IDs *****************/
+  /***************************************************************************/
 
+  /**
+   * Fetches all proposal IDs without filtering them on the basis of their
+   * status.
+   */
+  const getAllProposals = async () => {
+    await errorWrapper(async () => {
+      if (!web3 || !governor) {
+        setProposalIds([]);
+        throw ConnectToMetaMaskError;
+      }
+      let ids = await governor.methods.getAllProposalIds().call();
+      ids = ids.map(id => web3.utils.numberToHex(id));
+      setProposalIds(ids);
+    });
+  };
+
+  /**
+   * Fetches all proposals as soon as the user connects to wallet.
+   */
+  useEffect(() => {
+    getAllProposals();
+  }, [governor]);
+
+  /****************************************************************************/
+  /****************** Functions for Proposing a New Proposal ******************/
+  /****************************************************************************/
+
+  /**
+   * Funnction for a new proposer. Anyone can propose a new proposal as per our
+   * current implementation of governor. Refetches all proposal IDs at the end.
+   * @param newState New proposed state for `MyContract` contract state.
+   * @param description Some description for the proposal.
+   */
   const proposeStateUpdate = async (
     newState: number,
     description: string = ""
@@ -250,6 +299,9 @@ export const AppContextProvider: FC = ({ children }) => {
     });
   };
 
+  /**
+   * Gets the current state value from `MyContract` contract.
+   */
   const getCurrentStateOfMyContract = async () => {
     await errorWrapper(async () => {
       if (!connected || !account || !myContract) {
@@ -260,33 +312,26 @@ export const AppContextProvider: FC = ({ children }) => {
     });
   };
 
+  /**
+   * This effect updates the state of `MyContract` contract in the UI as soon as
+   * the user connects to the wallet.
+   */
   useEffect(() => {
     getCurrentStateOfMyContract();
   }, [myContract]);
 
-  /******************* All Proposals *******************/
+  /***************************************************************************/
+  /*********** Functions for Interacting with an Existing Proposal ***********/
+  /***************************************************************************/
 
-  const getAllProposals = async () => {
-    await errorWrapper(async () => {
-      if (!web3 || !governor) {
-        throw ConnectToMetaMaskError;
-      }
-      let ids = await governor.methods.getAllProposalIds().call();
-      ids = ids.map(id => web3.utils.numberToHex(id));
-      setProposalIds(ids);
-    });
-  };
-
-  useEffect(() => {
-    getAllProposals();
-  }, [governor]);
-
-  /******************* Proposal *******************/
-
+  /**
+   * Gets status of a proposal and the status of voting on it.
+   * @param id Id of the proposal.
+   */
   const getProposal = async (id: string) => {
     setErrorMsg("");
     try {
-      if (!connected || !web3 || !account || !governor || !myContract) {
+      if (!connected || !web3 || !account || !governor) {
         throw ConnectToMetaMaskError;
       }
       const status = await governor.methods.state(id).call();
@@ -317,6 +362,12 @@ export const AppContextProvider: FC = ({ children }) => {
     }
   };
 
+  /**
+   * Casts vote for a given proposal. User must have non-zero voting power.
+   * @param proposalId ID of the proposal.
+   * @param support Are you voting `For` or `Against` the proposal or want to
+   * `Abstain` from voting on this proposal.
+   */
   const castVote = async (proposalId: string, support: VoteType) => {
     await errorWrapper(async () => {
       if (!connected || !account || !web3 || !governor) {
@@ -331,6 +382,10 @@ export const AppContextProvider: FC = ({ children }) => {
     });
   };
 
+  /**
+   * Cancels the given proposal. User must be the proposer of the proposal.
+   * @param id ID of the proposal.
+   */
   const cancelProposal = async (id: string) => {
     await errorWrapper(async () => {
       if (!connected || !account || !web3 || !governor) {
@@ -344,6 +399,11 @@ export const AppContextProvider: FC = ({ children }) => {
     });
   };
 
+  /**
+   * Puts a given proposal in the timelock queue. Proposal must be in
+   * `Succeeded` state.
+   * @param proposalId ID of the proposal.
+   */
   const queueProposal = async (proposalId: string) => {
     await errorWrapper(async () => {
       if (!connected || !account || !web3 || !governor) {
@@ -357,6 +417,11 @@ export const AppContextProvider: FC = ({ children }) => {
     });
   };
 
+  /**
+   * Executes a given proposal. The proposal must be in `Queued` state and
+   * timelock delay must have passed.
+   * @param proposalId ID of the proposal.
+   */
   const executeProposal = async (proposalId: string) => {
     await errorWrapper(async () => {
       if (!connected || !account || !web3 || !governor) {
@@ -371,26 +436,42 @@ export const AppContextProvider: FC = ({ children }) => {
     });
   };
 
+  /**
+   * Fetches proposal data as soon as a proposal is selected from the list of
+   * all proposals or a new block is added in the Ropsten Testnet.
+   */
   useEffect(() => {
     getProposal(currentProposalId);
   }, [currentProposalId, currentBlock]);
 
+  /***************************************************************************/
+  /******************* Functions for Subscribing to Events *******************/
+  /***************************************************************************/
+
+  /**
+   * Updates `currentBlock` state variable value as soon as a new block is
+   * added to the chain.
+   */
   const subscribe = () => {
-    if (!connected || !web3) {
-      return;
-    }
-    web3.eth.subscribe("newBlockHeaders", (err, block) => {
-      console.log({ blockNumber: block.number });
-      setCurrentBlock(block.number);
+    errorWrapper(() => {
+      if (!connected || !web3) {
+        throw ErrorSubscribingToNewBlocks;
+      }
+      web3.eth.subscribe("newBlockHeaders", (err, block) => {
+        console.log({ blockNumber: block.number });
+        setCurrentBlock(block.number);
+      });
     });
   };
 
+  /**
+   * Subscribes as soon as the user connects to MetaMask.
+   */
   useEffect(() => {
     subscribe();
   }, [web3]);
 
   const value: State = {
-    // ...initialState,
     loading,
     errorMsg,
     view,
