@@ -1,0 +1,39 @@
+{
+  "name": "p5-dao-contracts",
+  "private": false,
+  "description": "A sample project for creating a DAO.",
+  "version": "0.1.0",
+  "author": "Mian Muhammad Sharjeel Safdar <miansharjeelsafdar@gmail.com>",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "migrate": "truffle migrate",
+    "test": "truffle test",
+    "compile": "truffle compile",
+    "console": "truffle console",
+    "verify": "truffle run verify"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.3.2",
+    "@truffle/hdwallet-provider": "^1.5.0",
+    "dotenv": "^10.0.0"
+  },
+  "devDependencies": {
+    "truffle-plugin-verify": "^0.5.15"
+  },
+  "keywords": [
+    "truffle",
+    "ethereum",
+    "smart-contracts",
+    "solidity",
+    "dao",
+    "on-chain-governance"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SharjeelSafdar/dapp-projects"
+  },
+  "bugs": {
+    "url": "https://github.com/SharjeelSafdar/dapp-projects/issues"
+  }
+}

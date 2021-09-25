@@ -1,0 +1,34 @@
+[
+  {
+    "inputs": [],
+    "name": "getCurrentState",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "_num", "type": "uint256" }
+    ],
+    "name": "num",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "string", "name": "_name", "type": "string" }],
+    "name": "str",
+    "outputs": [{ "internalType": "string", "name": "", "type": "string" }],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "_state", "type": "uint256" }
+    ],
+    "name": "updateState",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

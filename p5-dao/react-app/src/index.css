@@ -1,0 +1,153 @@
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
+    monospace;
+}
+
+.App {
+  text-align: center;
+}
+
+.background {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+  padding: 30px;
+}
+
+.container {
+  max-width: 650px;
+}
+
+.btn-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+@media (min-width: 600px) {
+  .btn-container {
+    flex-direction: row;
+  }
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  width: 300px;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto;
+}
+
+.row {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto;
+}
+
+.box {
+  border-radius: 7px;
+  border: 2px solid white;
+  padding: 5px 20px;
+  cursor: pointer;
+}
+
+nav ul {
+  display: flex;
+  flex-direction: row;
+  list-style: none;
+  border-top: 2px solid white;
+  border-bottom: 2px solid white;
+  padding: 0 10px;
+}
+
+nav ul li {
+  padding: 5px 15px;
+  margin: 0 3px;
+  width: 150px;
+  cursor: pointer;
+  text-align: center;
+  border-radius: 7px;
+}
+nav ul li:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.selected {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.item {
+  margin: 10px 20px;
+  min-width: 220px;
+}
+
+.centered {
+  text-align: center;
+}
+
+.line {
+  position: relative;
+}
+.line::before,
+.line::after {
+  content: "";
+  position: absolute;
+  background-color: white;
+  height: 2px;
+  top: 50%;
+}
+.line::before {
+  left: 10%;
+  right: 55%;
+}
+.line::after {
+  right: 10%;
+  left: 55%;
+}
+
+button {
+  background-color: rgb(102, 51, 153);
+  color: whitesmoke;
+  padding: 10px 30px;
+  display: inline;
+  margin: 10px 20px;
+  min-width: 250px;
+  cursor: pointer;
+}
+button:disabled {
+  background-color: rgba(102, 51, 153, 0.4);
+  cursor: not-allowed;
+}
+
+#error {
+  color: red;
+  max-width: 90vw;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+input {
+  min-width: 237px;
+  height: 30px;
+  border-radius: 5px;
+  padding: 5px;
+  margin: 5px;
+  position: relative;
+}
