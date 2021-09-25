@@ -4,4 +4,4 @@
 2.  [Create an ERC721 Token](./p2-erc721-token)
 3.  [Create a Farm Smart Contract](./p3-farm-token)
 4.  [Create a Dummy DEX](./p4-dex)
-5.  [Create a DAO with Openzeppelin](./p-dao)
+5.  [Create a DAO with Openzeppelin](./p5-dao)
