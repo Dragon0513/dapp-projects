@@ -80,6 +80,23 @@ contract ERC20PaymentSplitter is Context {
     return _received[index];
   }
 
+  function paymentPending(address payee)
+    public view returns(uint256 currentPayment)
+  {
+    Payment[] storage payments = _payments[payee];
+    uint32 lastPaymentBlock = payments.length == 0 ? 1 : payments[payments.length - 1].inBlock;
+
+    for (uint256 i = _received.length; i > 0; --i) {
+      uint32 receiptBlock = _received[i - 1].inBlock;
+      // Edge Case: lastPaymentBlock == receiptBlock
+      if (lastPaymentBlock > receiptBlock) {
+        break;
+      }
+      uint224 sharesInReceiptBlock = _shareToken.shares(payee, receiptBlock);
+      currentPayment += (_received[i - 1].amount * sharesInReceiptBlock) / _received[i - 1].totalShares;
+    }
+  }
+
   function receivePayment(address sender, uint256 amount) external {
     require(amount > 0, "ERC20PaymentSplitter: receiving zero tokens.");
     _paymentToken.transferFrom(sender, address(this), amount);
@@ -96,23 +113,6 @@ contract ERC20PaymentSplitter is Context {
     }));
   }
 
-  function paymentPending(address payee)
-    public view returns(uint256 currentPayment)
-  {
-    Payment[] storage payments = _payments[payee];
-    uint32 lastPaymentBlock = payments.length == 0 ? 1 : payments[payments.length - 1].inBlock;
-
-    for (uint256 i = _received.length - 1; i >= 0; --i) {
-      uint32 receiptBlock = _received[i].inBlock;
-      // Edge Case: lastPaymentBlock == receiptBlock
-      if (lastPaymentBlock > receiptBlock) {
-        break;
-      }
-      uint224 sharesInReceiptBlock = _shareToken.shares(payee, receiptBlock);
-      currentPayment += (_received[i].amount * sharesInReceiptBlock) / _received[i].totalShares;
-    }
-  }
-
   function release() public virtual {
     address payee = _msgSender();
     require(sharesOf(payee) > 0, "ERC20PaymentSplitter: account has no shares");
@@ -127,7 +127,7 @@ contract ERC20PaymentSplitter is Context {
     _totalReleasedTo[payee] += payment;
     _totalReleased += payment;
 
-    _paymentToken.transferFrom(address(this), payee, payment);
+    _paymentToken.transfer(payee, payment);
     emit PaymentReleased(payee, payment);
   }
 }
