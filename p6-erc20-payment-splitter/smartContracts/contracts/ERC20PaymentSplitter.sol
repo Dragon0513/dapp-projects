@@ -30,6 +30,8 @@ import "./ERC20Shares.sol";
  * Note In case, this contract receives any {ERC20} tokens other than the token
  * set for payments (set at build time), the owner of the contract can call 
  * {drainTokens} function to transfer them to some address.
+ *
+ * _Available since v4.x._
  */
 abstract contract ERC20PaymentSplitter is Context, Ownable, ReentrancyGuard {
     struct Received {
@@ -89,7 +91,7 @@ abstract contract ERC20PaymentSplitter is Context, Ownable, ReentrancyGuard {
 
     /**
      * @dev Get the total amount of `_paymentToken` released to `payee` so far.
-     * @param payee address of `payee`.
+     * @param payee Address for which total paid amount is desired.
      */
     function totalPaidTo(address payee) public view returns (uint256) {
         return _totalPaidTo[payee];
@@ -104,6 +106,7 @@ abstract contract ERC20PaymentSplitter is Context, Ownable, ReentrancyGuard {
 
     /**
      * @dev Get the `pos`-th released payment to `payee`.
+     * @param payee Address for which payment data is desired.
      * @param pos Index of the released payment.
      */
     function paymentsData(address payee, uint256 pos) public view returns (Payment memory) {
@@ -123,7 +126,7 @@ abstract contract ERC20PaymentSplitter is Context, Ownable, ReentrancyGuard {
 
     /**
      * @dev Get the total amount of `_paymentToken` received from `payer` so far.
-     * @param payer address of `payer`.
+     * @param payer Address for which total received amount is desired.
      */
     function totalReceivedFrom(address payer) public view returns (uint256) {
         return _totalReceivedFrom[payer];

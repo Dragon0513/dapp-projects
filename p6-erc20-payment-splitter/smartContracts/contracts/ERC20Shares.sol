@@ -30,11 +30,16 @@ abstract contract ERC20Shares is ERC20, ERC20Permit {
 
     /**
      * @dev Emitted when a token transfer, minting or burning results in changes to an account's shares.
+     * @param account Address whose shares have changed.
+     * @param oldShares Old shares of `account`.
+     * @param newShares New shares of `account`.
      */
     event SharesChanged(address indexed account, uint256 oldShares, uint256 newShares);
 
     /**
      * @dev Get the `pos`-th shares checkpoint for `account`.
+     * @param account Address whose shares checkpoint is desired.
+     * @param pos Index of the shares checkpoint.
      */
     function sharesCheckpoints(address account, uint32 pos) public view virtual returns (SharesCheckpoint memory) {
         return _sharesCheckpoints[account][pos];
@@ -42,13 +47,15 @@ abstract contract ERC20Shares is ERC20, ERC20Permit {
 
     /**
      * @dev Get number of shares checkpoints for `account`.
+     * @param account Address whose number of shares checkpoints are desired.
      */
     function numSharesCheckpoints(address account) public view virtual returns (uint32) {
         return SafeCast.toUint32(_sharesCheckpoints[account].length);
     }
 
     /**
-    * @dev Returns the shares currently held by `account`. 
+    * @dev Get the shares currently held by `account`. 
+    * @param account Address whose current shares are desired.
     */
     function getShares(address account) public view returns (uint256) {
         uint256 pos = _sharesCheckpoints[account].length;
@@ -56,7 +63,9 @@ abstract contract ERC20Shares is ERC20, ERC20Permit {
     }
 
     /**
-    * @dev Returns the shares held by `account` in `blockNumber`. 
+    * @dev Get the shares held by `account` in `blockNumber`. 
+    * @param account Address whose past shares are desired.
+    * @param blockNumber Block number for which past shares are desired.
     *
     * Requirements:
     *
@@ -68,7 +77,31 @@ abstract contract ERC20Shares is ERC20, ERC20Permit {
     }
 
     /**
-    * @dev Writes checkpoints for `from` and `to` accounts whenever a shares (token) transfer occurs.
+     * @dev Get the total number of shares currently. Uses {totalSupply} of
+     * {ERC20} under the hood.
+     */
+    function getTotalShares() public view returns (uint256) {
+        return totalSupply();
+    }
+
+    /**
+     * @dev Get the total number of shares in `blockNumber`.
+     * @param blockNumber Block number for which total shares are desired.
+     *
+     * Requirements:
+     *
+     * - `blockNumber` must have been already mined
+     */
+    function getTotalPastShares(uint32 blockNumber) public view returns (uint256) {
+        require(blockNumber < block.number, "ERC20Shares: block not yet mined");
+        return _sharesCheckpointsLookup(_totalSharesCheckpoints, blockNumber);
+    }
+
+    /**
+    * @dev Writes checkpoints for `from` and `to` accounts whenever shares (tokens) are transferred.
+    * @param from Address tokens are transferred from.
+    * @param to Address tokens are transferred to.
+    * @param amount Amount of tokens transferred.
     *
     * Emits a {SharesChanged} event for both accounts.
     */
@@ -80,6 +113,8 @@ abstract contract ERC20Shares is ERC20, ERC20Permit {
 
     /**
      * @dev Snapshots the totalShares (totalSupply) after it has been increased.
+     * @param account Address the minted tokens are sent to.
+     * @param amount Amount of tokens minted.
      */
     function _mint(address account, uint256 amount) internal virtual override {
         super._mint(account, amount);
@@ -89,6 +124,8 @@ abstract contract ERC20Shares is ERC20, ERC20Permit {
 
     /**
      * @dev Snapshots the totalShares (totalSupply) after it has been decreased.
+     * @param account Address the tokens are burnt from.
+     * @param amount Amount of tokens burnt.
      */
     function _burn(address account, uint256 amount) internal virtual override {
         super._burn(account, amount);
@@ -96,11 +133,14 @@ abstract contract ERC20Shares is ERC20, ERC20Permit {
         _writeSharesCheckpoint(_totalSharesCheckpoints, OP.SUB, amount);
     }
 
-    function _moveShares(
-        address src,
-        address dst,
-        uint256 amount
-    ) private {
+    /**
+     * @dev Writes checkpoints for new shares of `src` and `dst` accounts after
+     * a token transfer.
+     * @param src Address the tokens are transferred from.
+     * @param dst Address the tokens are transferred to.
+     * @param amount Amount of tokens transferred.
+     */
+    function _moveShares(address src, address dst, uint256 amount) private {
         if (src != dst && amount > 0) {
             if (src != address(0)) {
                 (uint256 oldShares, uint256 newShares) = 
@@ -117,7 +157,10 @@ abstract contract ERC20Shares is ERC20, ERC20Permit {
     }
 
     /**
-    * @dev Writes checkpoints for `from` and `to` accounts whenever a shares (token) transfer occurs.
+    * @dev Writes checkpoints when a change in shares occurs.
+    * @param ckpts Array of checkpoints to which a new checkpoint will be added.
+    * @param op Whether to increase (`ADD`) or decrease (`SUB`) the shares. See `OP` enum.
+    * @param delta Amount of change in shares.
     */
     function _writeSharesCheckpoint(
         SharesCheckpoint[] storage ckpts,
@@ -143,6 +186,8 @@ abstract contract ERC20Shares is ERC20, ERC20Permit {
 
     /**
     * @dev Lookup a value in a list of (sorted) shares checkpoints.
+    * @param ckpts An array of checkpoints to search for a particular checkpoint.
+    * @param blockNumber Block number in which the number of shares are desired.
     */
     function _sharesCheckpointsLookup(
         SharesCheckpoint[] storage ckpts,
