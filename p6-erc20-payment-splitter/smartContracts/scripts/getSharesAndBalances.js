@@ -1,29 +1,29 @@
 const FakeDai = artifacts.require("FakeDai");
 const ApiToken = artifacts.require("ApiToken");
-const ERC20PaymentSplitter = artifacts.require("ERC20PaymentSplitter");
+const MySplitter = artifacts.require("MySplitter");
 const accounts = require("./ganacheAccounts.json");
 
 module.exports = async callback => {
   const fakeDai = await FakeDai.deployed();
   const apiToken = await ApiToken.deployed();
-  const paymentSplitter = await ERC20PaymentSplitter.deployed();
+  const paymentSplitter = await MySplitter.deployed();
 
   const shareHolders = accounts.slice(0, 5);
   const daiSender = accounts[5];
 
   console.log("Shares:");
   for (let i = 0; i < shareHolders.length; ++i) {
-    let shares = await apiToken.currentShares(shareHolders[i]);
+    let shares = await apiToken.getShares(shareHolders[i]);
     console.log(`\tAcc${i}:`, shares.toString() / 1e18, "ATKN");
   }
-  const totalShares = await paymentSplitter.totalShares();
+  const totalShares = await apiToken.getTotalShares();
   console.log("\tTotal Shares:", totalShares.toString() / 1e18, "ATKN");
   console.log("");
 
   console.log("Released Payments:");
   for (let i = 0; i < shareHolders.length; ++i) {
-    let payments = await paymentSplitter.totalReleasedTo(shareHolders[i]);
-    console.log(`\tAcc${i}:`, payments.toString() / 1e18, "FDAI");
+    let paid = await paymentSplitter.totalPaidTo(shareHolders[i]);
+    console.log(`\tAcc${i}:`, paid.toString() / 1e18, "FDAI");
   }
   console.log("");
 
@@ -54,10 +54,10 @@ module.exports = async callback => {
     totalReceived.toString() / 1e18,
     "FDAI"
   );
-  const totalReleased = await paymentSplitter.totalReleased();
+  const totalPaid = await paymentSplitter.totalPaid();
   console.log(
     "\tTotal Fake DAI Released:",
-    totalReleased.toString() / 1e18,
+    totalPaid.toString() / 1e18,
     "FDAI"
   );
 

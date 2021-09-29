@@ -12,8 +12,24 @@ module.exports = async (callback, acc) => {
   const daiSender = accounts[5];
 
   const payeeIndex = 1;
+  let balance = await fakeDai.balanceOf(shareHolders[payeeIndex]);
+  console.log(
+    `Acc${payeeIndex}`,
+    "balance before:",
+    balance.toString() / 1e18,
+    "FDAI"
+  );
+
   console.log(`Releasing payment to Acc${payeeIndex}...`);
   await paymentSplitter.release({ from: shareHolders[payeeIndex] });
+
+  let balance = await fakeDai.balanceOf(shareHolders[payeeIndex]);
+  console.log(
+    `Acc${payeeIndex}`,
+    "balance after:",
+    balance.toString() / 1e18,
+    "FDAI"
+  );
 
   callback();
 };

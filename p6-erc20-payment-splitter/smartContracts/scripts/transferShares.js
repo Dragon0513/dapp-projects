@@ -15,7 +15,7 @@ module.exports = async (callback, acc) => {
 
   console.log("Shares Before:");
   for (let i = 0; i < shareHolders.length; ++i) {
-    let shares = await apiToken.currentShares(shareHolders[i]);
+    let shares = await apiToken.getShares(shareHolders[i]);
     console.log(`\tAcc${i}:`, shares.toString() / 1e18, "ATKN");
   }
   console.log("");
@@ -32,7 +32,7 @@ module.exports = async (callback, acc) => {
 
   console.log("Shares After:");
   for (let i = 0; i < shareHolders.length; ++i) {
-    let shares = await apiToken.currentShares(shareHolders[i]);
+    let shares = await apiToken.getShares(shareHolders[i]);
     console.log(`\tAcc${i}:`, shares.toString() / 1e18, "ATKN");
   }
 
