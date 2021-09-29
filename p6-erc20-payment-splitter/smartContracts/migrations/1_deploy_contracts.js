@@ -1,6 +1,6 @@
 const FakeDai = artifacts.require("FakeDai");
 const ApiToken = artifacts.require("ApiToken");
-const ERC20PaymentSplitter = artifacts.require("ERC20PaymentSplitter");
+const MySplitter = artifacts.require("MySplitter");
 
 module.exports = async function (deployer, _, accounts) {
   console.log({ accounts });
@@ -10,9 +10,5 @@ module.exports = async function (deployer, _, accounts) {
 
   const fakeDai = await FakeDai.deployed();
   const apiToken = await ApiToken.deployed();
-  await deployer.deploy(
-    ERC20PaymentSplitter,
-    apiToken.address,
-    fakeDai.address
-  );
+  await deployer.deploy(MySplitter, apiToken.address, fakeDai.address);
 };
