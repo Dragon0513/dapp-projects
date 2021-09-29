@@ -9,6 +9,28 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./ERC20Shares.sol";
 
+/**
+ * @title PaymentSplitter
+ * @dev This contract allows to split ERC20 payments among a group of accounts.
+ * The sender does not need to be aware that the payments will be split in this
+ * way, since it is handled transparently by the contract.
+ *
+ * The payments are received and released in the form of an {ERC20} token. While
+ * the split is done proportional to the percentage holdings of an {ERC20Shares}
+ * token. Whenever the contract receives {ERC20} tokens, it takes a snapshot of
+ * the total supply of the {ERC20Shares} token in that block. Any {ERC20Shares}
+ * token holder can get his share of payment proportional to his holdings of
+ * {ERC20Shares} token when the payment was received by this contract. 
+ *
+ * {ERC20PaymentSplitter} follows a _pull payment_ model. This means that
+ * payments are not automatically forwarded to the accounts but kept in this
+ * contract, and the actual transfer is triggered as a separate step by calling
+ * the {releasePayment} function.
+ *
+ * Note In case, this contract receives any {ERC20} tokens other than the token
+ * set for payments (set at build time), the owner of the contract can call 
+ * {drainTokens} function to transfer them to some address.
+ */
 abstract contract ERC20PaymentSplitter is Context, Ownable, ReentrancyGuard {
     struct Received {
         uint32 inBlock;
@@ -50,7 +72,8 @@ abstract contract ERC20PaymentSplitter is Context, Ownable, ReentrancyGuard {
      * @param sharesToken_ Address of the {ERC20Shares} token to use.
      * @param paymentToken_ Address of the {ERC20} token to use.
      *
-     * Note All two of these values are immutable: they can only be set once during construction.
+     * Note All two of these values are immutable: they can only be set once
+     * during construction.
      */
     constructor(ERC20Shares sharesToken_, ERC20 paymentToken_) {
         _sharesToken = sharesToken_;
@@ -148,7 +171,8 @@ abstract contract ERC20PaymentSplitter is Context, Ownable, ReentrancyGuard {
      * Requirements:
      *
      * - `amount` must be non-zero.
-     * - Sender must have already allowed {ERC20PaymentSplitter} to draw `amount` tokens from `sender` address.
+     * - Sender must have already allowed {ERC20PaymentSplitter} to draw
+     *   `amount` tokens from `sender` address.
      */
     function receivePayment(address sender, uint256 amount) external {
         require(amount > 0, "ERC20PaymentSplitter: receiving zero tokens.");

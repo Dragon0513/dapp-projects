@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 /**
+ * @title ERC20Shares
  * @dev Extension of ERC20 to support tracking of shares (balances) of holders.
  *
  * This extension keeps a history (checkpoints) of each account's shares (balances).
