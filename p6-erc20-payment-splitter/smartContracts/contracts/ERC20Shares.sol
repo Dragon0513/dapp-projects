@@ -2,10 +2,19 @@
 pragma solidity ^0.8.7;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
+import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
-contract ERC20Shares is ERC20, ERC20Permit {
+/**
+ * @dev Extension of ERC20 to support tracking of shares (balances) of holders.
+ *
+ * This extension keeps a history (checkpoints) of each account's shares (balances).
+ * Shares can be queried through the public accessors {getShares} and {getPastShares}.
+ *
+ * _Available since v4.x._
+ */
+abstract contract ERC20Shares is ERC20, ERC20Permit {
     struct SharesCheckpoint {
         uint32 fromBlock;
         uint256 shares;
@@ -16,10 +25,26 @@ contract ERC20Shares is ERC20, ERC20Permit {
     }
 
     mapping(address => SharesCheckpoint[]) private _sharesCheckpoints;
+    SharesCheckpoint[] _totalSharesCheckpoints;
 
+    /**
+     * @dev Emitted when a token transfer, minting or burning results in changes to an account's shares.
+     */
     event SharesChanged(address indexed account, uint256 oldShares, uint256 newShares);
 
-    constructor(string memory name_, string memory symbol_) ERC20(name_, symbol_) ERC20Permit(name_) {}
+    /**
+     * @dev Get the `pos`-th shares checkpoint for `account`.
+     */
+    function sharesCheckpoints(address account, uint32 pos) public view virtual returns (SharesCheckpoint memory) {
+        return _sharesCheckpoints[account][pos];
+    }
+
+    /**
+     * @dev Get number of shares checkpoints for `account`.
+     */
+    function numSharesCheckpoints(address account) public view virtual returns (uint32) {
+        return SafeCast.toUint32(_sharesCheckpoints[account].length);
+    }
 
     /**
     * @dev Returns the shares currently held by `account`. 
@@ -49,39 +74,57 @@ contract ERC20Shares is ERC20, ERC20Permit {
     function _afterTokenTransfer(address from, address to, uint256 amount) internal virtual override {
         super._afterTokenTransfer(from, to, amount);
 
-        // No need to write a checkpoint for zero address.
-        if (from != address(0)) {
-            (uint256 oldShares, uint256 newShares) = _writeSharesCheckpoint(from, amount, OP.SUB);
-            emit SharesChanged(from, oldShares, newShares);
-        }
-        // No need to write a checkpoint for zero address.
-        if (to != address(0)) {
-            (uint256 oldShares, uint256 newShares) = _writeSharesCheckpoint(to, amount, OP.ADD);
-            emit SharesChanged(to, oldShares, newShares);
-        }
+        _moveShares(from, to, amount);
     }
 
+    /**
+     * @dev Snapshots the totalShares (totalSupply) after it has been increased.
+     */
     function _mint(address account, uint256 amount) internal virtual override {
         super._mint(account, amount);
+
+        _writeSharesCheckpoint(_totalSharesCheckpoints, OP.ADD, amount);
     }
 
+    /**
+     * @dev Snapshots the totalShares (totalSupply) after it has been decreased.
+     */
     function _burn(address account, uint256 amount) internal virtual override {
         super._burn(account, amount);
+
+        _writeSharesCheckpoint(_totalSharesCheckpoints, OP.SUB, amount);
+    }
+
+    function _moveShares(
+        address src,
+        address dst,
+        uint256 amount
+    ) private {
+        if (src != dst && amount > 0) {
+            if (src != address(0)) {
+                (uint256 oldShares, uint256 newShares) = 
+                    _writeSharesCheckpoint(_sharesCheckpoints[src], OP.SUB, amount);
+                emit SharesChanged(src, oldShares, newShares);
+            }
+
+            if (dst != address(0)) {
+                (uint256 oldShares, uint256 newShares) = 
+                    _writeSharesCheckpoint(_sharesCheckpoints[dst], OP.ADD, amount);
+                emit SharesChanged(dst, oldShares, newShares);
+            }
+        }
     }
 
     /**
     * @dev Writes checkpoints for `from` and `to` accounts whenever a shares (token) transfer occurs.
     */
     function _writeSharesCheckpoint(
-        address account,
-        uint256 delta,
-        OP op
+        SharesCheckpoint[] storage ckpts,
+        OP op,
+        uint256 delta
     ) private returns (uint256 oldShares, uint256 newShares) {
-        require(account != address(0), "ERC20Shares: writing checkpoint for zero address.");
-        require(delta > 0, "ERC20Shares: no change in shares.");
         require(op == OP.ADD || op == OP.SUB, "ERC20Shares: unsupported operation while writing checkpoint.");
 
-        SharesCheckpoint[] storage ckpts = _sharesCheckpoints[account];
         uint256 pos = ckpts.length;
         oldShares = pos == 0 ? 0 : ckpts[pos - 1].shares;
         newShares = op == OP.ADD ? oldShares + delta : oldShares - delta;
