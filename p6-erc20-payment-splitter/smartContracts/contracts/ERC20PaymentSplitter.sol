@@ -157,7 +157,6 @@ abstract contract ERC20PaymentSplitter is Context, Ownable, ReentrancyGuard {
 
         for (uint256 i = _received.length; i > 0; --i) {
             uint256 receiptBlock = _received[i - 1].inBlock;
-            // Edge Case: lastPaymentBlock == receiptBlock
             if (lastPaymentBlock > receiptBlock) {
                 break;
             }
@@ -198,13 +197,10 @@ abstract contract ERC20PaymentSplitter is Context, Ownable, ReentrancyGuard {
      *
      * Requirements:
      *
-     * - Sender must be holding some `_sharesToken` tokens.
      * - Sender must have non-zero pending payment.
      */
     function releasePayment() public virtual nonReentrant {
         address payee = _msgSender();
-        require(_sharesToken.getShares(payee) > 0, "ERC20PaymentSplitter: account has no shares");
-
         uint256 payment = paymentPending(payee);
         require(payment > 0, "ERC20PaymentSplitter: account is not due any payment");
 

@@ -85,7 +85,7 @@ abstract contract ERC20Shares is ERC20, ERC20Permit {
             return getShares(account);
         }
         uint256 pos = _sharesCheckpoints[account].fromBlocks.findUpperBound(blockNumber);
-        return _sharesCheckpoints[account].shares[pos];
+        return _sharesCheckpoints[account].shares[pos - 1];
     }
 
     /**
@@ -112,7 +112,7 @@ abstract contract ERC20Shares is ERC20, ERC20Permit {
             return getTotalShares();
         }
         uint256 pos = _totalSharesCheckpoints.fromBlocks.findUpperBound(blockNumber);
-        return _totalSharesCheckpoints.shares[pos];
+        return _totalSharesCheckpoints.shares[pos - 1];
     }
 
     /**
