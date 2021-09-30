@@ -35,13 +35,13 @@ import "./ERC20Shares.sol";
  */
 abstract contract ERC20PaymentSplitter is Context, Ownable, ReentrancyGuard {
     struct Received {
-        uint32 inBlock;
+        uint256 inBlock;
         uint256 amount;
         uint256 totalShares;
         address from;
     }
     struct Payment {
-        uint32 inBlock;
+        uint256 inBlock;
         uint256 amount;
     }
 
@@ -153,15 +153,15 @@ abstract contract ERC20PaymentSplitter is Context, Ownable, ReentrancyGuard {
      */
     function paymentPending(address payee) public view returns(uint256 currentPayment) {
         Payment[] storage payments = _payments[payee];
-        uint32 lastPaymentBlock = payments.length == 0 ? 0 : payments[payments.length - 1].inBlock;
+        uint256 lastPaymentBlock = payments.length == 0 ? 0 : payments[payments.length - 1].inBlock;
 
         for (uint256 i = _received.length; i > 0; --i) {
-            uint32 receiptBlock = _received[i - 1].inBlock;
+            uint256 receiptBlock = _received[i - 1].inBlock;
             // Edge Case: lastPaymentBlock == receiptBlock
             if (lastPaymentBlock > receiptBlock) {
                 break;
             }
-            uint224 sharesInReceiptBlock = SafeCast.toUint224(_sharesToken.getPastShares(payee, receiptBlock));
+            uint256 sharesInReceiptBlock = _sharesToken.getPastShares(payee, receiptBlock);
             currentPayment += (_received[i - 1].amount * sharesInReceiptBlock) / _received[i - 1].totalShares;
         }
     }
@@ -184,11 +184,11 @@ abstract contract ERC20PaymentSplitter is Context, Ownable, ReentrancyGuard {
         
         _totalReceived += amount;
         _totalReceivedFrom[sender] += amount;
-        uint32 currentBlock = SafeCast.toUint32(block.number);
+        uint256 currentBlock = block.number;
         _received.push(Received({
             inBlock: currentBlock,
             amount: amount,
-            totalShares: SafeCast.toUint224(_sharesToken.totalSupply()),
+            totalShares: _sharesToken.totalSupply(),
             from: sender
         }));
     }
@@ -209,7 +209,7 @@ abstract contract ERC20PaymentSplitter is Context, Ownable, ReentrancyGuard {
         require(payment > 0, "ERC20PaymentSplitter: account is not due any payment");
 
         _payments[payee].push(Payment({
-            inBlock: SafeCast.toUint32(block.number),
+            inBlock: block.number,
             amount: payment
         }));
         _totalPaidTo[payee] += payment;

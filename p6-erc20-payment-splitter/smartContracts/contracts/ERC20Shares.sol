@@ -4,7 +4,6 @@ pragma solidity ^0.8.7;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
-import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 /**
  * @title ERC20Shares
@@ -17,7 +16,7 @@ import "@openzeppelin/contracts/utils/math/SafeCast.sol";
  */
 abstract contract ERC20Shares is ERC20, ERC20Permit {
     struct SharesCheckpoint {
-        uint32 fromBlock;
+        uint256 fromBlock;
         uint256 shares;
     }
     enum OP {
@@ -41,7 +40,9 @@ abstract contract ERC20Shares is ERC20, ERC20Permit {
      * @param account Address whose shares checkpoint is desired.
      * @param pos Index of the shares checkpoint.
      */
-    function sharesCheckpoints(address account, uint32 pos) public view virtual returns (SharesCheckpoint memory) {
+    function sharesCheckpoints(address account, uint256 pos)
+        public view virtual returns (SharesCheckpoint memory)
+    {
         return _sharesCheckpoints[account][pos];
     }
 
@@ -49,8 +50,10 @@ abstract contract ERC20Shares is ERC20, ERC20Permit {
      * @dev Get number of shares checkpoints for `account`.
      * @param account Address whose number of shares checkpoints are desired.
      */
-    function numSharesCheckpoints(address account) public view virtual returns (uint32) {
-        return SafeCast.toUint32(_sharesCheckpoints[account].length);
+    function numSharesCheckpoints(address account)
+        public view virtual returns (uint256)
+    {
+        return _sharesCheckpoints[account].length;
     }
 
     /**
@@ -63,7 +66,7 @@ abstract contract ERC20Shares is ERC20, ERC20Permit {
     }
 
     /**
-    * @dev Get the shares held by `account` in `blockNumber`. 
+    * @dev Get the shares held by `account` in `blockNumber`.
     * @param account Address whose past shares are desired.
     * @param blockNumber Block number for which past shares are desired.
     *
@@ -71,8 +74,13 @@ abstract contract ERC20Shares is ERC20, ERC20Permit {
     *
     * - `blockNumber` must have been already mined
     */
-    function getPastShares(address account, uint32 blockNumber) public view returns (uint256) {
-        require(blockNumber < block.number, "ERC20Shares: block not yet mined");
+    function getPastShares(address account, uint256 blockNumber)
+        public view returns (uint256)
+    {
+        require(blockNumber <= block.number, "ERC20Shares: block not yet mined");
+        if (blockNumber == block.number) {
+            return getShares(account);
+        }
         return _sharesCheckpointsLookup(_sharesCheckpoints[account], blockNumber);
     }
 
@@ -92,7 +100,9 @@ abstract contract ERC20Shares is ERC20, ERC20Permit {
      *
      * - `blockNumber` must have been already mined
      */
-    function getTotalPastShares(uint32 blockNumber) public view returns (uint256) {
+    function getPastTotalShares(uint256 blockNumber) 
+        public view returns (uint256)
+    {
         require(blockNumber < block.number, "ERC20Shares: block not yet mined");
         return _sharesCheckpointsLookup(_totalSharesCheckpoints, blockNumber);
     }
@@ -105,7 +115,9 @@ abstract contract ERC20Shares is ERC20, ERC20Permit {
     *
     * Emits a {SharesChanged} event for both accounts.
     */
-    function _afterTokenTransfer(address from, address to, uint256 amount) internal virtual override {
+    function _afterTokenTransfer(address from, address to, uint256 amount)
+        internal virtual override
+    {
         super._afterTokenTransfer(from, to, amount);
 
         _moveShares(from, to, amount);
@@ -178,7 +190,7 @@ abstract contract ERC20Shares is ERC20, ERC20Permit {
             ckpts[pos - 1].shares = newShares;
         } else {
             ckpts.push(SharesCheckpoint({
-                fromBlock: SafeCast.toUint32(block.number),
+                fromBlock: block.number,
                 shares: newShares
             }));
         }
