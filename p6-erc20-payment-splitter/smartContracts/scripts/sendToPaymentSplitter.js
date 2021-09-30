@@ -1,64 +1,65 @@
 const FakeDai = artifacts.require("FakeDai");
 const ApiToken = artifacts.require("ApiToken");
-const ERC20PaymentSplitter = artifacts.require("ERC20PaymentSplitter");
+const MySplitter = artifacts.require("MySplitter");
 const accounts = require("./ganacheAccounts.json");
 
 module.exports = async (callback, acc) => {
   const fakeDai = await FakeDai.deployed();
   const apiToken = await ApiToken.deployed();
-  const paymentSplitter = await ERC20PaymentSplitter.deployed();
+  const mySplitter = await MySplitter.deployed();
 
   const shareHolders = accounts.slice(0, 5);
   const daiSender = accounts[5];
 
   const amount = "1000" + "000000000000000000";
 
-  let allowance = await fakeDai.allowance(daiSender, paymentSplitter.address);
-  let balance = await fakeDai.balanceOf(paymentSplitter.address);
+  let allowance = await fakeDai.allowance(daiSender, mySplitter.address);
+  let balance = await fakeDai.balanceOf(mySplitter.address);
   console.log(
-    "PaymentSplitter's allowance before allowing:",
+    "MySplitter's allowance before allowing:",
     allowance.toString() / 1e18,
     "FDAI"
   );
   console.log(
-    "PaymentSplitter's balance before allowing:",
+    "MySplitter's balance before allowing:",
     balance.toString() / 1e18,
     "FDAI"
   );
   console.log("");
 
   console.log("Allowing", amount / 1e18, "fake DAIs to payment splitter...");
-  await fakeDai.approve(paymentSplitter.address, amount, {
+  await fakeDai.approve(mySplitter.address, amount, {
     from: daiSender,
   });
   console.log("");
 
-  allowance = await fakeDai.allowance(daiSender, paymentSplitter.address);
-  balance = await fakeDai.balanceOf(paymentSplitter.address);
+  allowance = await fakeDai.allowance(daiSender, mySplitter.address);
+  balance = await fakeDai.balanceOf(mySplitter.address);
   console.log(
-    "PaymentSplitter's allowance after allowing:",
+    "MySplitter's allowance after allowing:",
     allowance.toString() / 1e18,
     "FDAI"
   );
   console.log(
-    "PaymentSplitter's balance after allowing:",
+    "MySplitter's balance after allowing:",
     balance.toString() / 1e18,
     "FDAI"
   );
   console.log("");
 
-  console.log("Payment splitter receiving", amount / 1e18, "fake DAIs...");
-  await paymentSplitter.receivePayment(daiSender, amount);
+  console.log("MySplitter receiving", amount / 1e18, "fake DAIs...");
+  await mySplitter.receivePayment(daiSender, amount);
+  console.log("");
 
-  allowance = await fakeDai.allowance(daiSender, paymentSplitter.address);
-  balance = await fakeDai.balanceOf(paymentSplitter.address);
+  allowance = await fakeDai.allowance(daiSender, mySplitter.address);
+  balance = await fakeDai.balanceOf(mySplitter.address);
   console.log(
-    "PaymentSplitter's allowance after receiving:",
+    "MySplitter's allowance after receiving:",
     allowance.toString() / 1e18,
     "FDAI"
   );
   console.log(
-    "PaymentSplitter's balance after receiving:",
+    "MySplitter's balance after receiving:",
     balance.toString() / 1e18,
     "FDAI"
   );

@@ -6,7 +6,7 @@ const accounts = require("./ganacheAccounts.json");
 module.exports = async callback => {
   const fakeDai = await FakeDai.deployed();
   const apiToken = await ApiToken.deployed();
-  const paymentSplitter = await MySplitter.deployed();
+  const mySplitter = await MySplitter.deployed();
 
   const shareHolders = accounts.slice(0, 5);
   const daiSender = accounts[5];
@@ -22,14 +22,14 @@ module.exports = async callback => {
 
   console.log("Released Payments:");
   for (let i = 0; i < shareHolders.length; ++i) {
-    let paid = await paymentSplitter.totalPaidTo(shareHolders[i]);
+    let paid = await mySplitter.totalPaidTo(shareHolders[i]);
     console.log(`\tAcc${i}:`, paid.toString() / 1e18, "FDAI");
   }
   console.log("");
 
   console.log("Pending Payments:");
   for (let i = 0; i < shareHolders.length; ++i) {
-    let payments = await paymentSplitter.paymentPending(shareHolders[i]);
+    let payments = await mySplitter.paymentPending(shareHolders[i]);
     console.log(`\tAcc${i}:`, payments.toString() / 1e18, "FDAI");
   }
   console.log("");
@@ -42,19 +42,19 @@ module.exports = async callback => {
   console.log("");
 
   console.log("Payment Splitter:");
-  const currentBalance = await fakeDai.balanceOf(paymentSplitter.address);
+  const currentBalance = await fakeDai.balanceOf(mySplitter.address);
   console.log(
     "\tCurrent Fake Dai Balance:",
     currentBalance.toString() / 1e18,
     "FDAI"
   );
-  const totalReceived = await paymentSplitter.totalReceived();
+  const totalReceived = await mySplitter.totalReceived();
   console.log(
     "\tTotal Fake DAI Received:",
     totalReceived.toString() / 1e18,
     "FDAI"
   );
-  const totalPaid = await paymentSplitter.totalPaid();
+  const totalPaid = await mySplitter.totalPaid();
   console.log(
     "\tTotal Fake DAI Released:",
     totalPaid.toString() / 1e18,
