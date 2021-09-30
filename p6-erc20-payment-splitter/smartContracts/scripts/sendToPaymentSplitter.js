@@ -3,7 +3,7 @@ const ApiToken = artifacts.require("ApiToken");
 const MySplitter = artifacts.require("MySplitter");
 const accounts = require("./ganacheAccounts.json");
 
-module.exports = async (callback, acc) => {
+module.exports = async callback => {
   const fakeDai = await FakeDai.deployed();
   const apiToken = await ApiToken.deployed();
   const mySplitter = await MySplitter.deployed();
