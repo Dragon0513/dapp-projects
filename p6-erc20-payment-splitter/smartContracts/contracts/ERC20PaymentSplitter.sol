@@ -108,12 +108,13 @@ abstract contract ERC20PaymentSplitter is Context, Ownable, ReentrancyGuard {
      * @dev Get the `pos`-th released payment to `payee`.
      * @param payee Address for which payment data is desired.
      * @param pos Index of the released payment.
+     *
+     * Requirements:
+     *
+     * - `pos` must be a valid index.
      */
     function paymentsData(address payee, uint256 pos) public view returns (Payment memory) {
-        require(
-            _payments[payee].length > 0,
-            "ERC20PaymentSplitter: no payments for the given account."
-        );
+        require(pos < paymentsCount(payee), "ERC20PaymentSplitter: out of bounds index.");
         return _payments[payee][pos];
     }
 
@@ -142,8 +143,13 @@ abstract contract ERC20PaymentSplitter is Context, Ownable, ReentrancyGuard {
     /**
      * @dev Get the `pos`-th received payment.
      * @param pos Index of the received payment.
+     *
+     * Requirements:
+     *
+     * - `pos` must be a valid index.
      */
     function receiveData(uint256 pos) public view returns (Received memory) {
+        require(pos < receiveCount(), "ERC20PaymentSplitter: out of bounds index.");
         return _received[pos];
     }
 
