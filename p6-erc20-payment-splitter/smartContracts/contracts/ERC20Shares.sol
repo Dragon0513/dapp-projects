@@ -4,6 +4,7 @@ pragma solidity ^0.8.7;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
+import "@openzeppelin/contracts/utils/Arrays.sol";
 
 /**
  * @title ERC20Shares
@@ -15,17 +16,19 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
  * _Available since v4.x._
  */
 abstract contract ERC20Shares is ERC20, ERC20Permit {
-    struct SharesCheckpoint {
-        uint256 fromBlock;
-        uint256 shares;
+    using Arrays for uint256[];
+
+    struct SharesCheckpoints {
+        uint256[] fromBlocks;
+        uint256[] shares;
     }
     enum OP {
         ADD,
         SUB
     }
 
-    mapping(address => SharesCheckpoint[]) private _sharesCheckpoints;
-    SharesCheckpoint[] _totalSharesCheckpoints;
+    mapping(address => SharesCheckpoints) private _sharesCheckpoints;
+    SharesCheckpoints _totalSharesCheckpoints;
 
     /**
      * @dev Emitted when a token transfer, minting or burning results in changes to an account's shares.
@@ -41,9 +44,10 @@ abstract contract ERC20Shares is ERC20, ERC20Permit {
      * @param pos Index of the shares checkpoint.
      */
     function sharesCheckpoints(address account, uint256 pos)
-        public view virtual returns (SharesCheckpoint memory)
+        public view virtual returns (uint256 fromBlock, uint256 shares)
     {
-        return _sharesCheckpoints[account][pos];
+        fromBlock = _sharesCheckpoints[account].fromBlocks[pos];
+        shares = _sharesCheckpoints[account].shares[pos];
     }
 
     /**
@@ -53,7 +57,7 @@ abstract contract ERC20Shares is ERC20, ERC20Permit {
     function numSharesCheckpoints(address account)
         public view virtual returns (uint256)
     {
-        return _sharesCheckpoints[account].length;
+        return _sharesCheckpoints[account].fromBlocks.length;
     }
 
     /**
@@ -61,8 +65,7 @@ abstract contract ERC20Shares is ERC20, ERC20Permit {
     * @param account Address whose current shares are desired.
     */
     function getShares(address account) public view returns (uint256) {
-        uint256 pos = _sharesCheckpoints[account].length;
-        return pos == 0 ? 0 : _sharesCheckpoints[account][pos - 1].shares;
+        return balanceOf(account);
     }
 
     /**
@@ -81,7 +84,8 @@ abstract contract ERC20Shares is ERC20, ERC20Permit {
         if (blockNumber == block.number) {
             return getShares(account);
         }
-        return _sharesCheckpointsLookup(_sharesCheckpoints[account], blockNumber);
+        uint256 pos = _sharesCheckpoints[account].fromBlocks.findUpperBound(blockNumber);
+        return _sharesCheckpoints[account].shares[pos];
     }
 
     /**
@@ -103,8 +107,12 @@ abstract contract ERC20Shares is ERC20, ERC20Permit {
     function getPastTotalShares(uint256 blockNumber) 
         public view returns (uint256)
     {
-        require(blockNumber < block.number, "ERC20Shares: block not yet mined");
-        return _sharesCheckpointsLookup(_totalSharesCheckpoints, blockNumber);
+        require(blockNumber <= block.number, "ERC20Shares: block not yet mined");
+        if (blockNumber == block.number) {
+            return getTotalShares();
+        }
+        uint256 pos = _totalSharesCheckpoints.fromBlocks.findUpperBound(blockNumber);
+        return _totalSharesCheckpoints.shares[pos];
     }
 
     /**
@@ -175,58 +183,22 @@ abstract contract ERC20Shares is ERC20, ERC20Permit {
     * @param delta Amount of change in shares.
     */
     function _writeSharesCheckpoint(
-        SharesCheckpoint[] storage ckpts,
+        SharesCheckpoints storage ckpts,
         OP op,
         uint256 delta
     ) private returns (uint256 oldShares, uint256 newShares) {
         require(op == OP.ADD || op == OP.SUB, "ERC20Shares: unsupported operation while writing checkpoint.");
 
-        uint256 pos = ckpts.length;
-        oldShares = pos == 0 ? 0 : ckpts[pos - 1].shares;
+        uint256 pos = ckpts.fromBlocks.length;
+        oldShares = pos == 0 ? 0 : ckpts.shares[pos - 1];
         newShares = op == OP.ADD ? oldShares + delta : oldShares - delta;
 
         // A gaurd to avoid writing two checkpoints in the same block.
-        if (pos > 0 && ckpts[pos - 1].fromBlock == block.number) {
-            ckpts[pos - 1].shares = newShares;
+        if (pos > 0 && ckpts.fromBlocks[pos - 1] == block.number) {
+            ckpts.shares[pos - 1] = newShares;
         } else {
-            ckpts.push(SharesCheckpoint({
-                fromBlock: block.number,
-                shares: newShares
-            }));
+            ckpts.fromBlocks.push(block.number);
+            ckpts.shares.push(newShares);
         }
-    }
-
-    /**
-    * @dev Lookup a value in a list of (sorted) shares checkpoints.
-    * @param ckpts An array of checkpoints to search for a particular checkpoint.
-    * @param blockNumber Block number in which the number of shares are desired.
-    */
-    function _sharesCheckpointsLookup(
-        SharesCheckpoint[] storage ckpts,
-        uint256 blockNumber
-    ) private view returns (uint256) {
-        // We run a binary search to look for the earliest checkpoint taken after `blockNumber`.
-        //
-        // During the loop, the index of the wanted checkpoint remains in the range [low-1, high).
-        // With each iteration, either `low` or `high` is moved towards the middle of the range to maintain the invariant.
-        // - If the middle checkpoint is after `blockNumber`, we look in [low, mid)
-        // - If the middle checkpoint is before or equal to `blockNumber`, we look in [mid+1, high)
-        // Once we reach a single value (when low == high), we've found the right checkpoint at the index high-1, if not
-        // out of bounds (in which case we're looking too far in the past and the result is 0).
-        // Note that if the latest checkpoint available is exactly for `blockNumber`, we end up with an index that is
-        // past the end of the array, so we technically don't find a checkpoint after `blockNumber`, but it works out
-        // the same.
-        uint256 high = ckpts.length;
-        uint256 low = 0;
-        while (low < high) {
-            uint256 mid = Math.average(low, high);
-            if (ckpts[mid].fromBlock > blockNumber) {
-                high = mid;
-            } else {
-                low = mid + 1;
-            }
-        }
-
-        return high == 0 ? 0 : ckpts[high - 1].shares;
     }
 }
