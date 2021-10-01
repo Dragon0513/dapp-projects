@@ -3,7 +3,7 @@ import { useWeb3React } from "@web3-react/core";
 import { NoEthereumProviderError } from "@web3-react/injected-connector";
 import Web3 from "web3";
 import { injector } from "../../components/wallet";
-import { State, Views, initialState } from "../../types";
+import { State, Views, initialState, ShareHolder } from "../../types";
 
 import { FakeDai } from "../../contracts/types/FakeDai";
 import { SharesToken } from "../../contracts/types/SharesToken";
@@ -11,8 +11,6 @@ import { MySplitter } from "../../contracts/types/MySplitter";
 import FakeDaiAbi from "../../contracts/abi/FakeDai.json";
 import SharesTokenAbi from "../../contracts/abi/SharesToken.json";
 import SplitterAbi from "../../contracts/abi/MySplitter.json";
-
-// const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 // Types of these env variables are declared in `react-app-env.d.ts`;
 // so, we can have IntelliSense help us.
@@ -33,16 +31,22 @@ export const AppContextProvider: FC = ({ children }) => {
     library: web3,
   } = useWeb3React<Web3>();
   const [loading, setLoading] = useState(initialState.loading);
+  const [loadingData, setLoadingData] = useState(initialState.loading);
   const [errorMsg, setErrorMsg] = useState(initialState.errorMsg);
   const [view, setView] = useState<Views>(Views.Profile);
   const [fakeDai, setFakeDai] = useState<FakeDai | null>(null);
   const [sharesToken, setSharesToken] = useState<SharesToken | null>(null);
   const [splitter, setSplitter] = useState<MySplitter | null>(null);
-  const [currentBlock, setCurrentBlock] = useState(0);
+
+  const [userShares, setUserShares] = useState(initialState.userShares);
+  const [userDaiBalance, setUserDaiBalance] = useState(
+    initialState.userDaiBalance
+  );
+  const [shareHolders, setShareHolders] = useState(initialState.shareHolders);
+  const [splitterData, setSplitterData] = useState(initialState.splitterData);
 
   const isEthereumAvailable = !(error instanceof NoEthereumProviderError);
   const ConnectToMetaMaskError = new Error("Connect to MetaMask!");
-  const ErrorSubscribingToNewBlocks = new Error("Error subscribing...");
 
   /***************************************************************************/
   /**************************** Utility Functions ****************************/
@@ -75,7 +79,7 @@ export const AppContextProvider: FC = ({ children }) => {
   };
 
   /**
-   * Creates contract objects for `MyVoteToken`, `MyGovernor` and `MyContract`
+   * Creates contract objects for `fakeDai`, `sharesToken` and `splitter`
    * contracts.
    */
   const createContractObjects = () => {
@@ -144,259 +148,220 @@ export const AppContextProvider: FC = ({ children }) => {
   /****************************************************************************/
 
   /**
-   * Delegates user's votes to the given address. So that the delegatee can vote
-   * on your behalf. It will increase the delegatee's voting power.
-   * @param delegatee Public address of the delegatee.
+   * Get user's shares and fake DAI balance.
    */
-  // const delegateVotes = async (delegatee: string) => {
-  //   await errorWrapper(async () => {
-  //     if (!web3 || !account) {
-  //       throw ConnectToMetaMaskError;
-  //     }
-  //   });
-  // };
-
-  /**
-   * Get public address of current user's delegatee. Equal to `None` if
-   * delegatee is the zero address. Equal to `Yourself` if the user's address
-   * and the delegatee's address are the same.
-   */
-  const getCurrentDelegatee = async () => {
+  const getUserBalances = async () => {
     await errorWrapper(async () => {
-      if (!web3 || !account) {
+      if (!web3 || !account || !sharesToken || !fakeDai) {
+        setUserShares(0);
+        setUserDaiBalance(0);
         throw ConnectToMetaMaskError;
       }
+      let shares = await sharesToken.methods.getShares(account).call();
+      shares = web3.utils.fromWei(shares, "ether");
+      setUserShares(+shares);
+
+      let daiBalance = await fakeDai.methods.balanceOf(account).call();
+      daiBalance = web3.utils.fromWei(daiBalance, "ether");
+      setUserDaiBalance(+daiBalance);
     });
   };
 
   /**
-   * Gets the number of `MVTKN` tokens the user has in wallet.
-   */
-  const getVoteTokenBalance = async () => {
-    await errorWrapper(async () => {
-      if (!connected || !web3 || !account) {
-        throw ConnectToMetaMaskError;
-      }
-    });
-  };
-
-  /**
-   * Gets the voting power of the user.
-   */
-  const getVotingPower = async () => {
-    await errorWrapper(async () => {
-      if (!connected || !web3 || !account) {
-        throw ConnectToMetaMaskError;
-      }
-    });
-  };
-
-  /**
-   * This effect updates current user's `MVTKN` token balance, voting power and
-   * his/her delegatee. Besides the first render, this effect runs as soon as
-   * the user connects to MetaMask or changes account in his/her MetaMask
-   * wallet.
+   * Update user's shares and fake DAI balance whenever user connects to the
+   * wallet or changes account from the wallet.
    */
   useEffect(() => {
-    getVoteTokenBalance();
-    getVotingPower();
-    getCurrentDelegatee();
-  }, [/*voteToken,*/ account]);
-
-  /***************************************************************************/
-  /***************** Functions for Fetching all Proposal IDs *****************/
-  /***************************************************************************/
+    getUserBalances();
+  }, [sharesToken, fakeDai, account]);
 
   /**
-   * Fetches all proposal IDs without filtering them on the basis of their
-   * status.
+   * Mint and get 500 Shares Tokens.
    */
-  // const getAllProposals = async () => {
-  //   await errorWrapper(async () => {
-  //     if (!web3) {
-  //       throw ConnectToMetaMaskError;
-  //     }
-  //   });
-  // };
+  const get500Shares = async () => {
+    await errorWrapper(async () => {
+      if (!web3 || !account || !sharesToken) {
+        throw ConnectToMetaMaskError;
+      }
+      await web3.eth.sendTransaction({
+        from: account,
+        to: SHARES_TOKEN_ADDRESS,
+        data: sharesToken.methods.sendMe500Shares().encodeABI(),
+      });
+      await Promise.all([getUserBalances(), getAllShareHoldersData()]);
+    });
+  };
 
   /**
-   * Fetches all proposals as soon as the user connects to wallet.
+   * Mint and get 1000 fake DAIs so they can be sent to the payment splitter.
    */
-  // useEffect(
-  //   () => {
-  //     getAllProposals();
-  //   },
-  //   [
-  //     /*governor*/
-  //   ]
-  // );
+  const get1000Dai = async () => {
+    await errorWrapper(async () => {
+      if (!web3 || !account || !fakeDai) {
+        throw ConnectToMetaMaskError;
+      }
+      await web3.eth.sendTransaction({
+        from: account,
+        to: FAKE_DAI_ADDRESS,
+        data: fakeDai.methods.sendMe1000Dai().encodeABI(),
+      });
+      await getUserBalances();
+    });
+  };
+
+  /****************************************************************************/
+  /***************** Functions for Fetching all Share Holders *****************/
+  /****************************************************************************/
+
+  /**
+   * Get the amount of fake DAIs the payment splitter currently has, the amount
+   * it has received so far and the amount it has released so far.
+   */
+  const getSplitterBalances = async () => {
+    await errorWrapper(async () => {
+      if (!connected || !web3 || !fakeDai || !splitter) {
+        throw ConnectToMetaMaskError;
+      }
+      const currentBalance = await fakeDai.methods
+        .balanceOf(SPLITTER_ADDRESS)
+        .call();
+      const totalReceived = await splitter.methods.totalReceived().call();
+      const totalReleased = await splitter.methods.totalPaid().call();
+
+      setSplitterData({
+        currentBalance: +web3.utils.fromWei(currentBalance, "ether"),
+        totalReceived: +web3.utils.fromWei(totalReceived, "ether"),
+        totalReleased: +web3.utils.fromWei(totalReleased, "ether"),
+      });
+    });
+  };
+
+  /**
+   * Get all the share holders and stats about them.
+   */
+  const getAllShareHoldersData = async () => {
+    setLoadingData(true);
+    setErrorMsg("");
+    try {
+      if (!connected || !web3 || !sharesToken || !fakeDai || !splitter) {
+        throw ConnectToMetaMaskError;
+      }
+      const addresses = await sharesToken.methods.getHolders().call();
+
+      let shareHoldersData: ShareHolder[] = [];
+      addresses.forEach(async address => {
+        const [shares, daiBalance, pending, received] = await Promise.all([
+          sharesToken.methods.getShares(address).call(),
+          fakeDai.methods.balanceOf(address).call(),
+          splitter.methods.paymentPending(address).call(),
+          splitter.methods.totalPaidTo(address).call(),
+        ]);
+
+        shareHoldersData.push({
+          address,
+          shares: +web3.utils.fromWei(shares, "ether"),
+          daiBalance: +web3.utils.fromWei(daiBalance, "ether"),
+          pending: +web3.utils.fromWei(pending, "ether"),
+          received: +web3.utils.fromWei(received, "ether"),
+        });
+      });
+
+      setShareHolders(shareHoldersData);
+    } catch (error) {
+      if (typeof error === "object") {
+        const _err = error as any;
+        setErrorMsg(_err.message);
+      }
+    } finally {
+      setLoadingData(false);
+    }
+  };
+
+  /**
+   * It is called when the user connects to the wallet.
+   */
+  useEffect(() => {
+    getAllShareHoldersData();
+    getSplitterBalances();
+  }, [splitter]);
 
   /****************************************************************************/
   /****************** Functions for Proposing a New Proposal ******************/
   /****************************************************************************/
 
   /**
-   * Funnction for a new proposer. Anyone can propose a new proposal as per our
-   * current implementation of governor. Refetches all proposal IDs at the end.
-   * @param newState New proposed state for `MyContract` contract state.
-   * @param description Some description for the proposal.
+   * Allow payment splitter to get `daiAmount` fake DAIs from user's account.
+   * @param daiAmount Amount of fake DAIs to allow.
    */
-  // const proposeStateUpdate = async (
-  //   newState: number,
-  //   description: string = ""
-  // ) => {
-  //   await errorWrapper(async () => {
-  //     if (!web3 || !account) {
-  //       throw ConnectToMetaMaskError;
-  //     }
-  //   });
-  // };
-
-  /**
-   * Gets the current state value from `MyContract` contract.
-   */
-  // const getCurrentStateOfMyContract = async () => {
-  //   await errorWrapper(async () => {
-  //     if (!connected || !account) {
-  //       throw ConnectToMetaMaskError;
-  //     }
-  //   });
-  // };
-
-  /**
-   * This effect updates the state of `MyContract` contract in the UI as soon as
-   * the user connects to the wallet.
-   */
-  // useEffect(
-  //   () => {
-  //     getCurrentStateOfMyContract();
-  //   },
-  //   [
-  //     /*myContract*/
-  //   ]
-  // );
-
-  /***************************************************************************/
-  /*********** Functions for Interacting with an Existing Proposal ***********/
-  /***************************************************************************/
-
-  /**
-   * Gets status of a proposal and the status of voting on it.
-   * @param id Id of the proposal.
-   */
-  // const getProposal = async (id: string) => {
-  //   setErrorMsg("");
-  //   try {
-  //     if (!connected || !web3 || !account) {
-  //       throw ConnectToMetaMaskError;
-  //     }
-  //   } catch (error) {
-  //     // console.log({ error });
-  //     if (typeof error === "object") {
-  //       const _err = error as any;
-  //       setErrorMsg(_err.message);
-  //     }
-  //   }
-  // };
-
-  /**
-   * Casts vote for a given proposal. User must have non-zero voting power.
-   * @param proposalId ID of the proposal.
-   * @param support Are you voting `For` or `Against` the proposal or want to
-   * `Abstain` from voting on this proposal.
-   */
-  // const castVote = async (proposalId: string, support: VoteType) => {
-  //   await errorWrapper(async () => {
-  //     if (!connected || !account || !web3) {
-  //       throw ConnectToMetaMaskError;
-  //     }
-  //   });
-  // };
-
-  /**
-   * Cancels the given proposal. User must be the proposer of the proposal.
-   * @param id ID of the proposal.
-   */
-  // const cancelProposal = async (id: string) => {
-  //   await errorWrapper(async () => {
-  //     if (!connected || !account || !web3) {
-  //       throw ConnectToMetaMaskError;
-  //     }
-  //     await web3.eth.sendTransaction({
-  //       from: account,
-  //     });
-  //   });
-  // };
-
-  /**
-   * Puts a given proposal in the timelock queue. Proposal must be in
-   * `Succeeded` state.
-   * @param proposalId ID of the proposal.
-   */
-  // const queueProposal = async (proposalId: string) => {
-  //   await errorWrapper(async () => {
-  //     if (!connected || !account || !web3) {
-  //       throw ConnectToMetaMaskError;
-  //     }
-  //     await web3.eth.sendTransaction({
-  //       from: account,
-  //     });
-  //   });
-  // };
-
-  /**
-   * Executes a given proposal. The proposal must be in `Queued` state and
-   * timelock delay must have passed.
-   * @param proposalId ID of the proposal.
-   */
-  // const executeProposal = async (proposalId: string) => {
-  //   await errorWrapper(async () => {
-  //     if (!connected || !account || !web3) {
-  //       throw ConnectToMetaMaskError;
-  //     }
-  //     await web3.eth.sendTransaction({
-  //       from: account,
-  //     });
-  //   });
-  // };
-
-  /**
-   * Fetches proposal data as soon as a proposal is selected from the list of
-   * all proposals or a new block is added in the Ropsten Testnet.
-   */
-  useEffect(() => {
-    // getProposal(currentProposalId);
-  }, [/*currentProposalId,*/ currentBlock]);
-
-  /***************************************************************************/
-  /******************* Functions for Subscribing to Events *******************/
-  /***************************************************************************/
-
-  /**
-   * Updates `currentBlock` state variable value as soon as a new block is
-   * added to the chain.
-   */
-  const subscribe = () => {
-    errorWrapper(() => {
-      if (!connected || !web3) {
-        throw ErrorSubscribingToNewBlocks;
+  const allowSplitter = async (daiAmount: number) => {
+    await errorWrapper(async () => {
+      if (!connected || !account || !web3 || !fakeDai) {
+        throw ConnectToMetaMaskError;
       }
-      web3.eth.subscribe("newBlockHeaders", (err, block) => {
-        console.log({ blockNumber: block.number });
-        setCurrentBlock(block.number);
+      await web3.eth.sendTransaction({
+        from: account,
+        to: FAKE_DAI_ADDRESS,
+        data: fakeDai.methods
+          .approve(
+            SPLITTER_ADDRESS,
+            web3.utils.toWei(daiAmount.toString(), "ether")
+          )
+          .encodeABI(),
       });
     });
   };
 
   /**
-   * Subscribes as soon as the user connects to MetaMask.
+   * Send `daiAmount` fake DAIs to the payment splitter.
+   * @param daiAmount Amount of fake DAIs to send.
    */
-  useEffect(() => {
-    subscribe();
-  }, [web3]);
+  const sendSplitter = async (daiAmount: number) => {
+    await errorWrapper(async () => {
+      if (!connected || !account || !web3 || !splitter) {
+        throw ConnectToMetaMaskError;
+      }
+      await web3.eth.sendTransaction({
+        from: account,
+        to: SPLITTER_ADDRESS,
+        data: splitter.methods
+          .receivePayment(
+            account,
+            web3.utils.toWei(daiAmount.toString(), "ether")
+          )
+          .encodeABI(),
+      });
+      await Promise.all([
+        getUserBalances(),
+        getSplitterBalances(),
+        getAllShareHoldersData(),
+      ]);
+    });
+  };
+
+  /**
+   * Get current user's pending payment from the payment splitter.
+   */
+  const getMyPayment = async () => {
+    await errorWrapper(async () => {
+      if (!connected || !account || !web3 || !splitter) {
+        throw ConnectToMetaMaskError;
+      }
+      await web3.eth.sendTransaction({
+        from: account,
+        to: SPLITTER_ADDRESS,
+        data: splitter.methods.releasePayment().encodeABI(),
+      });
+      await Promise.all([
+        getUserBalances(),
+        getSplitterBalances(),
+        getAllShareHoldersData(),
+      ]);
+    });
+  };
 
   const value: State = {
     loading,
+    loadingData,
     errorMsg,
     view,
     setView,
@@ -405,7 +370,15 @@ export const AppContextProvider: FC = ({ children }) => {
     connect,
     disconnect,
     account,
-    currentBlock,
+    userShares,
+    userDaiBalance,
+    shareHolders,
+    splitterData,
+    get500Shares,
+    get1000Dai,
+    allowSplitter,
+    sendSplitter,
+    getMyPayment,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

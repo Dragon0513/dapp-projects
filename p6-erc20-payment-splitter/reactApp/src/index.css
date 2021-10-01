@@ -1,5 +1,15 @@
+:root {
+  --primary: rgb(102, 51, 153, 0.8);
+  --primary-trans: rgba(102, 51, 153, 0.5);
+  --primary-disabled: rgba(102, 51, 153, 0.3);
+  --text: white;
+  --text-trans: rgba(255, 255, 255, 0.1);
+  --background: #282c34;
+}
+
 body {
   margin: 0;
+  color: rgb(102, 51, 153);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
     "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
     sans-serif;
@@ -7,9 +17,19 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
-    monospace;
+.background {
+  background-color: var(--background);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: calc(10px + 2vmin);
+  color: var(--text);
+  padding: 30px;
+}
+
+.container {
+  max-width: 1100px;
 }
 
 table {
@@ -17,8 +37,8 @@ table {
 }
 
 th {
-  background-color: rgba(102, 51, 153, 0.7);
-  width: 150px;
+  background-color: var(--primary-trans);
+  width: 180px;
   padding: 10px 20px;
 }
 
@@ -44,21 +64,6 @@ td {
 
 .App {
   text-align: center;
-}
-
-.background {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-  padding: 30px;
-}
-
-.container {
-  max-width: 1100px;
 }
 
 .btn-container {
@@ -92,7 +97,7 @@ td {
 
 .box {
   border-radius: 7px;
-  border: 2px solid white;
+  border: 2px solid var(--text);
   padding: 5px 20px;
   cursor: pointer;
 }
@@ -101,8 +106,8 @@ nav ul {
   display: flex;
   flex-direction: row;
   list-style: none;
-  border-top: 2px solid white;
-  border-bottom: 2px solid white;
+  border-top: 2px solid var(--text);
+  border-bottom: 2px solid var(--text);
   padding: 0 10px;
 }
 
@@ -115,11 +120,11 @@ nav ul li {
   border-radius: 7px;
 }
 nav ul li:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--text-trans);
 }
 
 .selected {
-  background: rgba(102, 51, 153, 0.5);
+  background: var(--primary-trans);
 }
 
 .item {
@@ -128,7 +133,7 @@ nav ul li:hover {
 }
 
 .tile {
-  background-color: rgba(102, 51, 153, 0.7);
+  background-color: var(--primary-trans);
   padding: 0 45px;
   border-radius: 11px;
   width: fit-content;
@@ -145,7 +150,7 @@ nav ul li:hover {
 .line::after {
   content: "";
   position: absolute;
-  background-color: white;
+  background-color: var(--text);
   height: 2px;
   top: 50%;
 }
@@ -159,8 +164,8 @@ nav ul li:hover {
 }
 
 button {
-  background-color: rgb(102, 51, 153);
-  color: whitesmoke;
+  background-color: var(--primary);
+  color: var(--text);
   padding: 10px 30px;
   display: inline;
   margin: 10px 20px;
@@ -168,7 +173,7 @@ button {
   cursor: pointer;
 }
 button:disabled {
-  background-color: rgba(102, 51, 153, 0.4);
+  background-color: var(--primary-disabled);
   cursor: not-allowed;
 }
 
@@ -180,10 +185,31 @@ button:disabled {
 }
 
 input {
+  /* background-color: var(--background); */
   min-width: 237px;
   height: 30px;
   border-radius: 5px;
   padding: 5px;
   margin: 25px;
   position: relative;
+}
+
+.small-text {
+  font-size: 15px;
+}
+
+.med-text {
+  font-size: 20px;
+}
+
+a:any-link {
+  color: cornflowerblue;
+}
+
+.about-container {
+  width: 900px;
+}
+
+#link {
+  color: var(--text);
 }
