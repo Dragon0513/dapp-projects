@@ -5,3 +5,4 @@
 3.  [Create a Farm Smart Contract](./p3-farm-token)
 4.  [Create a Dummy DEX](./p4-dex)
 5.  [Create a DAO with Openzeppelin](./p5-dao)
+6.  [Create a ERC20PaymentSplitter](./p6-erc20-payment-splitter)
