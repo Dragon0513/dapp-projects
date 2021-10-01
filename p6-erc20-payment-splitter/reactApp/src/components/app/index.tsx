@@ -1,58 +1,41 @@
 import { FC } from "react";
-import {
-  ConnectToWallet,
-  Profile,
-  NewProposal,
-  AllProposals,
-  Proposal,
-} from "../";
+import { Profile, Payments, About } from "../";
 import { useAppContext } from "../../context/appContextProvider";
 import { Views } from "../../types";
 
 const App: FC = () => {
-  const { connected, view, setView } = useAppContext();
+  const { view, setView } = useAppContext();
 
   return (
     <div className="background">
-      <ConnectToWallet />
-      {connected && (
-        <>
-          <nav>
-            <ul>
-              <li
-                onClick={() => setView(Views.Profile)}
-                className={view === Views.Profile ? "selected" : ""}
-              >
-                Profile
-              </li>
-              <li
-                onClick={() => setView(Views.NewProposal)}
-                className={view === Views.NewProposal ? "selected" : ""}
-              >
-                New Proposal
-              </li>
-              <li
-                onClick={() => setView(Views.AllProposals)}
-                className={view === Views.AllProposals ? "selected" : ""}
-              >
-                All Proposals
-              </li>
-              <li
-                onClick={() => setView(Views.Proposal)}
-                className={view === Views.Proposal ? "selected" : ""}
-              >
-                Proposal
-              </li>
-            </ul>
-          </nav>
-          <div className="container">
-            {view === Views.Profile && <Profile />}
-            {view === Views.NewProposal && <NewProposal />}
-            {view === Views.AllProposals && <AllProposals />}
-            {view === Views.Proposal && <Proposal />}
-          </div>
-        </>
-      )}
+      <h2>ERC20 Payment Splitter Demo</h2>
+      <nav>
+        <ul>
+          <li
+            onClick={() => setView(Views.Profile)}
+            className={view === Views.Profile ? "selected" : ""}
+          >
+            Profile
+          </li>
+          <li
+            onClick={() => setView(Views.Payments)}
+            className={view === Views.Payments ? "selected" : ""}
+          >
+            Payments
+          </li>
+          <li
+            onClick={() => setView(Views.About)}
+            className={view === Views.About ? "selected" : ""}
+          >
+            About
+          </li>
+        </ul>
+      </nav>
+      <div className="container">
+        {view === Views.Profile && <Profile />}
+        {view === Views.Payments && <Payments />}
+        {view === Views.About && <About />}
+      </div>
     </div>
   );
 };

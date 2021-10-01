@@ -14,7 +14,7 @@ const ConnectToWallet: FC = () => {
   return (
     <>
       <div className="btn-container">
-        <button onClick={connect} disabled={connected}>
+        <button onClick={connect} disabled={connected || loading}>
           Connect to MetaMask
         </button>
         <button onClick={disconnect} disabled={!connected || loading}>
@@ -22,7 +22,14 @@ const ConnectToWallet: FC = () => {
         </button>
       </div>
       {!isEthereumAvailable && <p id="error">MetaMask not installed!</p>}
-      <p>{connected ? `Connected with ${account}` : "Not Connected"}</p>
+      {connected ? (
+        <>
+          <p className="centered">Connected with</p>
+          <p className="centered">{account}</p>
+        </>
+      ) : (
+        <p className="centered">Not Connected</p>
+      )}
     </>
   );
 };

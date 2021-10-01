@@ -13,9 +13,8 @@ export interface State {
 
 export enum Views {
   Profile,
-  NewProposal,
-  AllProposals,
-  Proposal,
+  Payments,
+  About,
 }
 
 export const initialState: State = {
