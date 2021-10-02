@@ -1,6 +1,6 @@
 import { InjectedConnector } from "@web3-react/injected-connector";
 
-export const injector = new InjectedConnector({
+export const injectedConnector = new InjectedConnector({
   supportedChainIds: [
     // 1, // Mainnet
     3, // Ropsten

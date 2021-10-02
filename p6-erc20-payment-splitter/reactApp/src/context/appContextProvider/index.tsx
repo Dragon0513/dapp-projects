@@ -3,7 +3,7 @@ import { useWeb3React } from "@web3-react/core";
 import { NoEthereumProviderError } from "@web3-react/injected-connector";
 import { UnsupportedChainIdError } from "@web3-react/core";
 import Web3 from "web3";
-import { injector } from "../../components/wallet";
+import { injectedConnector } from "../../connectors";
 import { State, Views, initialState, ShareHolder } from "../../types";
 
 import { FakeDai } from "../../contracts/types/FakeDai";
@@ -130,7 +130,7 @@ export const AppContextProvider: FC = ({ children }) => {
    */
   const connect = async () => {
     await errorWrapper(async () => {
-      await activate(injector);
+      await activate(injectedConnector);
       resetError();
     });
   };
