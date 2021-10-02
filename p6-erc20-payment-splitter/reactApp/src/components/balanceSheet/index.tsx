@@ -2,7 +2,7 @@ import { FC } from "react";
 import { useAppContext } from "../../context/appContextProvider";
 
 const BalanceSheet: FC = () => {
-  const { shareHolders, loadingData } = useAppContext();
+  const { shareHolders, loadingData, account } = useAppContext();
 
   const formater = new Intl.NumberFormat("us", {
     maximumFractionDigits: 4,
@@ -26,7 +26,10 @@ const BalanceSheet: FC = () => {
         </thead>
         <tbody>
           {shareHolders.map(shareHolder => (
-            <tr key={shareHolder.address}>
+            <tr
+              key={shareHolder.address}
+              className={account === shareHolder.address ? "tr-current" : ""}
+            >
               <td>
                 {shareHolder.address.slice(0, 5)}...
                 {shareHolder.address.slice(shareHolder.address.length - 5)}

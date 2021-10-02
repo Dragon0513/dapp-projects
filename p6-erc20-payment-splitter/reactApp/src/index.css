@@ -46,6 +46,21 @@ td {
   text-align: center;
 }
 
+.tr-current {
+  background-color: var(--primary-disabled);
+  border-radius: 10px;
+}
+
+.tr-current td:first-child {
+  border-top-left-radius: 15px;
+  border-bottom-left-radius: 15px;
+}
+
+.tr-current td:last-child {
+  border-top-right-radius: 15px;
+  border-bottom-right-radius: 15px;
+}
+
 .mt-high {
   margin-top: 50px;
 }
