@@ -6,6 +6,16 @@ const BalanceSheet: FC = () => {
   const { account } = useInjectedContext();
   const { shareHolders } = useNetworkContext();
 
+  const totalShares = shareHolders
+    .map(shareHolder => shareHolder.shares)
+    .reduce((acc, curr) => acc + curr, 0);
+  const totalPending = shareHolders
+    .map(shareHolder => shareHolder.pending)
+    .reduce((acc, curr) => acc + curr, 0);
+  const totalReceived = shareHolders
+    .map(shareHolder => shareHolder.received)
+    .reduce((acc, curr) => acc + curr, 0);
+
   const formater = new Intl.NumberFormat("us", {
     maximumFractionDigits: 4,
   });
@@ -41,11 +51,11 @@ const BalanceSheet: FC = () => {
         </tbody>
         <tfoot>
           <tr>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
+            <td>Total</td>
+            <td>{totalShares}</td>
+            <td>-</td>
+            <td>{totalPending}</td>
+            <td>{totalReceived}</td>
           </tr>
         </tfoot>
       </table>

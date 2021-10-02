@@ -46,6 +46,10 @@ td {
   text-align: center;
 }
 
+tfoot td {
+  border-top: 2px solid var(--text);
+}
+
 .tr-current {
   background-color: var(--primary-disabled);
   border-radius: 10px;
