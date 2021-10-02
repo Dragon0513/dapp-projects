@@ -1,9 +1,9 @@
 import { FC } from "react";
 import { ConnectToWallet, Balances } from "../";
-import { useAppContext } from "../../context/appContextProvider";
+import { useInjectedContext } from "../../context/injectedContext";
 
 const Profile: FC = () => {
-  const { connected } = useAppContext();
+  const { connected } = useInjectedContext();
   return (
     <div>
       <ConnectToWallet />

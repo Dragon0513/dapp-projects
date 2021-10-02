@@ -1,8 +1,8 @@
 import { FC } from "react";
-import { useAppContext } from "../../context/appContextProvider";
+import { useNetworkContext } from "../../context/networkContext";
 
 const SplitterBalances: FC = () => {
-  const { splitterData } = useAppContext();
+  const { splitterData } = useNetworkContext();
 
   const formater = new Intl.NumberFormat("us", {
     maximumFractionDigits: 4,

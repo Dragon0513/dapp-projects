@@ -1,9 +1,9 @@
 import { FC, useState } from "react";
-import { useAppContext } from "../../context/appContextProvider";
+import { useInjectedContext } from "../../context/injectedContext";
 
 const InteractWithSplitter: FC = () => {
   const { loading, allowSplitter, sendSplitter, getMyPayment, userShares } =
-    useAppContext();
+    useInjectedContext();
   const [daiToSend, setDaiToSend] = useState(1000);
 
   return (

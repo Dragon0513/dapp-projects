@@ -1,11 +1,10 @@
-import { FC } from "react";
+import { FC, useState } from "react";
 import { FaGithub } from "react-icons/fa";
 import { Profile, Payments, About } from "../";
-import { useAppContext } from "../../context/appContextProvider";
 import { Views } from "../../types";
 
 const App: FC = () => {
-  const { view, setView } = useAppContext();
+  const [view, setView] = useState(Views.Profile);
 
   return (
     <div className="background">

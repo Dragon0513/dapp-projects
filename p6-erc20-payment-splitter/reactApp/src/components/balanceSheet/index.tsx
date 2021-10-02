@@ -1,16 +1,14 @@
 import { FC } from "react";
-import { useAppContext } from "../../context/appContextProvider";
+import { useInjectedContext } from "../../context/injectedContext";
+import { useNetworkContext } from "../../context/networkContext";
 
 const BalanceSheet: FC = () => {
-  const { shareHolders, loadingData, account } = useAppContext();
+  const { account } = useInjectedContext();
+  const { shareHolders } = useNetworkContext();
 
   const formater = new Intl.NumberFormat("us", {
     maximumFractionDigits: 4,
   });
-
-  if (loadingData) {
-    return <p>Loading...</p>;
-  }
 
   return (
     <div>
@@ -41,6 +39,15 @@ const BalanceSheet: FC = () => {
             </tr>
           ))}
         </tbody>
+        <tfoot>
+          <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+        </tfoot>
       </table>
       <p className="small-text">
         Note: The addresses in this table may be repeating. But don't worry;

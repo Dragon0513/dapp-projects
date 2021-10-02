@@ -1,5 +1,5 @@
 import { FC } from "react";
-import { useAppContext } from "../../context/appContextProvider";
+import { useInjectedContext } from "../../context/injectedContext";
 
 const ConnectToWallet: FC = () => {
   const {
@@ -10,7 +10,7 @@ const ConnectToWallet: FC = () => {
     connect,
     disconnect,
     account,
-  } = useAppContext();
+  } = useInjectedContext();
 
   return (
     <>

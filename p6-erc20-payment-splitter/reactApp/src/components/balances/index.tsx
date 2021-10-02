@@ -1,9 +1,9 @@
 import { FC } from "react";
-import { useAppContext } from "../../context/appContextProvider";
+import { useInjectedContext } from "../../context/injectedContext";
 
 const Balances: FC = () => {
   const { loading, userShares, userDaiBalance, get500Shares, get1000Dai } =
-    useAppContext();
+    useInjectedContext();
 
   const formater = new Intl.NumberFormat("us", {
     maximumFractionDigits: 4,

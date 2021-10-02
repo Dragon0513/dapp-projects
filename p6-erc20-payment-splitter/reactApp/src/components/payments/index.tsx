@@ -1,9 +1,9 @@
 import { FC } from "react";
 import { SplitterBalances, InteractWithSplitter, BalanceSheet } from "../";
-import { useAppContext } from "../../context/appContextProvider";
+import { useInjectedContext } from "../../context/injectedContext";
 
 const Payments: FC = () => {
-  const { connected } = useAppContext();
+  const { connected } = useInjectedContext();
 
   return (
     <div>

@@ -3,8 +3,8 @@ import { useWeb3React } from "@web3-react/core";
 import { NoEthereumProviderError } from "@web3-react/injected-connector";
 import { UnsupportedChainIdError } from "@web3-react/core";
 import Web3 from "web3";
-import { injectedConnector } from "../../connectors";
-import { State, Views, initialState, ShareHolder } from "../../types";
+import { injectedConnector } from "../../web3React/connectors";
+import { InjectedState, initialInjectedState, Providers } from "../../types";
 
 import { FakeDai } from "../../contracts/types/FakeDai";
 import { SharesToken } from "../../contracts/types/SharesToken";
@@ -19,10 +19,10 @@ const FAKE_DAI_ADDRESS = process.env.REACT_APP_FAKE_DAI_ADDRESS;
 const SHARES_TOKEN_ADDRESS = process.env.REACT_APP_SHARES_TOKEN_ADDRESS;
 const SPLITTER_ADDRESS = process.env.REACT_APP_SPLITTER_ADDRESS;
 
-const AppContext = createContext<State>(initialState);
-export const useAppContext = () => useContext(AppContext);
+const InjectedContext = createContext<InjectedState>(initialInjectedState);
+export const useInjectedContext = () => useContext(InjectedContext);
 
-export const AppContextProvider: FC = ({ children }) => {
+export const InjectedContextProvider: FC = ({ children }) => {
   const {
     activate,
     active: connected,
@@ -30,21 +30,17 @@ export const AppContextProvider: FC = ({ children }) => {
     account,
     error,
     library: web3,
-  } = useWeb3React<Web3>();
-  const [loading, setLoading] = useState(initialState.loading);
-  const [loadingData, setLoadingData] = useState(initialState.loading);
-  const [errorMsg, setErrorMsg] = useState(initialState.errorMsg);
-  const [view, setView] = useState<Views>(Views.Profile);
+  } = useWeb3React<Web3>(Providers.METAMASK);
+  const [loading, setLoading] = useState(initialInjectedState.loading);
+  const [errorMsg, setErrorMsg] = useState(initialInjectedState.errorMsg);
   const [fakeDai, setFakeDai] = useState<FakeDai | null>(null);
   const [sharesToken, setSharesToken] = useState<SharesToken | null>(null);
   const [splitter, setSplitter] = useState<MySplitter | null>(null);
 
-  const [userShares, setUserShares] = useState(initialState.userShares);
+  const [userShares, setUserShares] = useState(initialInjectedState.userShares);
   const [userDaiBalance, setUserDaiBalance] = useState(
-    initialState.userDaiBalance
+    initialInjectedState.userDaiBalance
   );
-  const [shareHolders, setShareHolders] = useState(initialState.shareHolders);
-  const [splitterData, setSplitterData] = useState(initialState.splitterData);
 
   const isEthereumAvailable = !(error instanceof NoEthereumProviderError);
   const isChainSupported = !(error instanceof UnsupportedChainIdError);
@@ -190,7 +186,7 @@ export const AppContextProvider: FC = ({ children }) => {
         to: SHARES_TOKEN_ADDRESS,
         data: sharesToken.methods.sendMe500Shares().encodeABI(),
       });
-      await Promise.all([getUserBalances(), getAllShareHoldersData()]);
+      await getUserBalances();
     });
   };
 
@@ -211,91 +207,9 @@ export const AppContextProvider: FC = ({ children }) => {
     });
   };
 
-  /****************************************************************************/
-  /***************** Functions for Fetching all Share Holders *****************/
-  /****************************************************************************/
-
-  /**
-   * Get the amount of fake DAIs the payment splitter currently has, the amount
-   * it has received so far and the amount it has released so far.
-   */
-  const getSplitterBalances = async () => {
-    await errorWrapper(async () => {
-      if (!connected || !web3 || !fakeDai || !splitter) {
-        setSplitterData({
-          currentBalance: 0,
-          totalReceived: 0,
-          totalReleased: 0,
-        });
-        throw ConnectToMetaMaskError;
-      }
-      const currentBalance = await fakeDai.methods
-        .balanceOf(SPLITTER_ADDRESS)
-        .call();
-      const totalReceived = await splitter.methods.totalReceived().call();
-      const totalReleased = await splitter.methods.totalPaid().call();
-
-      setSplitterData({
-        currentBalance: +web3.utils.fromWei(currentBalance, "ether"),
-        totalReceived: +web3.utils.fromWei(totalReceived, "ether"),
-        totalReleased: +web3.utils.fromWei(totalReleased, "ether"),
-      });
-    });
-  };
-
-  /**
-   * Get all the share holders and stats about them.
-   */
-  const getAllShareHoldersData = async () => {
-    setLoadingData(true);
-    setErrorMsg("");
-    try {
-      if (!connected || !web3 || !sharesToken || !fakeDai || !splitter) {
-        throw ConnectToMetaMaskError;
-      }
-      const addresses = await sharesToken.methods.getHolders().call();
-
-      let shareHoldersData: ShareHolder[] = [];
-      addresses.forEach(async address => {
-        const [shares, daiBalance, pending, received] = await Promise.all([
-          sharesToken.methods.getShares(address).call(),
-          fakeDai.methods.balanceOf(address).call(),
-          splitter.methods.paymentPending(address).call(),
-          splitter.methods.totalPaidTo(address).call(),
-        ]);
-
-        shareHoldersData.push({
-          address,
-          shares: +web3.utils.fromWei(shares, "ether"),
-          daiBalance: +web3.utils.fromWei(daiBalance, "ether"),
-          pending: +web3.utils.fromWei(pending, "ether"),
-          received: +web3.utils.fromWei(received, "ether"),
-        });
-      });
-
-      setShareHolders(shareHoldersData);
-    } catch (error) {
-      console.log({ error });
-      if (typeof error === "object") {
-        const _err = error as any;
-        setErrorMsg(_err.message);
-      }
-    } finally {
-      setLoadingData(false);
-    }
-  };
-
-  /**
-   * It is called when the user connects to the wallet.
-   */
-  useEffect(() => {
-    getAllShareHoldersData();
-    getSplitterBalances();
-  }, [splitter]);
-
-  /****************************************************************************/
-  /****************** Functions for Proposing a New Proposal ******************/
-  /****************************************************************************/
+  /***************************************************************************/
+  /*********** Functions for Interacting with the Payment Splitter ***********/
+  /***************************************************************************/
 
   /**
    * Allow payment splitter to get `daiAmount` fake DAIs from user's account.
@@ -338,11 +252,7 @@ export const AppContextProvider: FC = ({ children }) => {
           )
           .encodeABI(),
       });
-      await Promise.all([
-        getUserBalances(),
-        getSplitterBalances(),
-        getAllShareHoldersData(),
-      ]);
+      await getUserBalances();
     });
   };
 
@@ -359,20 +269,13 @@ export const AppContextProvider: FC = ({ children }) => {
         to: SPLITTER_ADDRESS,
         data: splitter.methods.releasePayment().encodeABI(),
       });
-      await Promise.all([
-        getUserBalances(),
-        getSplitterBalances(),
-        getAllShareHoldersData(),
-      ]);
+      await getUserBalances();
     });
   };
 
-  const value: State = {
+  const value: InjectedState = {
     loading,
-    loadingData,
     errorMsg,
-    view,
-    setView,
     isEthereumAvailable,
     isChainSupported,
     connected,
@@ -381,8 +284,6 @@ export const AppContextProvider: FC = ({ children }) => {
     account,
     userShares,
     userDaiBalance,
-    shareHolders,
-    splitterData,
     get500Shares,
     get1000Dai,
     allowSplitter,
@@ -390,5 +291,9 @@ export const AppContextProvider: FC = ({ children }) => {
     getMyPayment,
   };
 
-  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+  return (
+    <InjectedContext.Provider value={value}>
+      {children}
+    </InjectedContext.Provider>
+  );
 };
