@@ -177,7 +177,7 @@ button:disabled {
   cursor: not-allowed;
 }
 
-#error {
+.error {
   color: red;
   max-width: 90vw;
   overflow-y: auto;

@@ -1,6 +1,7 @@
 import { FC, useState, createContext, useContext, useEffect } from "react";
 import { useWeb3React } from "@web3-react/core";
 import { NoEthereumProviderError } from "@web3-react/injected-connector";
+import { UnsupportedChainIdError } from "@web3-react/core";
 import Web3 from "web3";
 import { injector } from "../../components/wallet";
 import { State, Views, initialState, ShareHolder } from "../../types";
@@ -46,6 +47,7 @@ export const AppContextProvider: FC = ({ children }) => {
   const [splitterData, setSplitterData] = useState(initialState.splitterData);
 
   const isEthereumAvailable = !(error instanceof NoEthereumProviderError);
+  const isChainSupported = !(error instanceof UnsupportedChainIdError);
   const ConnectToMetaMaskError = new Error("Connect to MetaMask!");
 
   /***************************************************************************/
@@ -372,6 +374,7 @@ export const AppContextProvider: FC = ({ children }) => {
     view,
     setView,
     isEthereumAvailable,
+    isChainSupported,
     connected,
     connect,
     disconnect,

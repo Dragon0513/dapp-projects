@@ -5,6 +5,7 @@ const ConnectToWallet: FC = () => {
   const {
     loading,
     isEthereumAvailable,
+    isChainSupported,
     connected,
     connect,
     disconnect,
@@ -21,7 +22,12 @@ const ConnectToWallet: FC = () => {
           Disconnect
         </button>
       </div>
-      {!isEthereumAvailable && <p id="error">MetaMask not installed!</p>}
+      {!isEthereumAvailable && (
+        <p className="centered error">MetaMask not installed!</p>
+      )}
+      {!isChainSupported && (
+        <p className="centered error">Chain ID not supported!</p>
+      )}
       {connected ? (
         <>
           <p className="centered">Connected with</p>

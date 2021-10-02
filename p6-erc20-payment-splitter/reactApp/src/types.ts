@@ -5,6 +5,7 @@ export interface State {
   view: Views;
   setView: React.Dispatch<React.SetStateAction<Views>>;
   isEthereumAvailable: boolean;
+  isChainSupported: boolean;
   connected: boolean;
   connect: () => Promise<void>;
   disconnect: () => void;
@@ -45,6 +46,7 @@ export const initialState: State = {
   view: Views.Profile,
   setView: () => {},
   isEthereumAvailable: false,
+  isChainSupported: false,
   connected: false,
   connect: async () => {},
   disconnect: () => {},
