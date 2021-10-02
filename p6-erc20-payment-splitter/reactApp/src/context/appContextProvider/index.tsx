@@ -68,7 +68,7 @@ export const AppContextProvider: FC = ({ children }) => {
     try {
       await fn();
     } catch (error) {
-      // console.log({ error });
+      console.log({ error });
       if (typeof error === "object") {
         const _err = error as any;
         setErrorMsg(_err.message);
@@ -220,6 +220,11 @@ export const AppContextProvider: FC = ({ children }) => {
   const getSplitterBalances = async () => {
     await errorWrapper(async () => {
       if (!connected || !web3 || !fakeDai || !splitter) {
+        setSplitterData({
+          currentBalance: 0,
+          totalReceived: 0,
+          totalReleased: 0,
+        });
         throw ConnectToMetaMaskError;
       }
       const currentBalance = await fakeDai.methods
@@ -268,6 +273,7 @@ export const AppContextProvider: FC = ({ children }) => {
 
       setShareHolders(shareHoldersData);
     } catch (error) {
+      console.log({ error });
       if (typeof error === "object") {
         const _err = error as any;
         setErrorMsg(_err.message);
