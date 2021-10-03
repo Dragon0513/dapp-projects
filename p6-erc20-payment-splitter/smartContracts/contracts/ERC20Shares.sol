@@ -40,6 +40,10 @@ abstract contract ERC20Shares is
         keccak256("ERC20_SHARES_ADMIN_ROLE");
     bytes32 public constant SNAPSHOT_CREATOR = keccak256("SNAPSHOT_CREATOR");
 
+    /**
+     * @dev Assigns {ERC20_SHARES_ADMIN_ROLE} role to the deployer and the
+     * contract itself.
+     */
     constructor() {
         _setRoleAdmin(ERC20_SHARES_ADMIN_ROLE, ERC20_SHARES_ADMIN_ROLE);
         _setRoleAdmin(SNAPSHOT_CREATOR, ERC20_SHARES_ADMIN_ROLE);
@@ -86,8 +90,8 @@ abstract contract ERC20Shares is
      *
      * Requirements:
      *
-     * - `snapshotId` must have be greater than 0.
-     * - `snapshotId` must have be less than or equal to the current snapshotId.
+     * - `snapshotId` must be greater than 0.
+     * - `snapshotId` must be less than or equal to the current snapshotId.
      */
     function getPastShares(address account, uint256 snapshotId)
         public view returns (uint256)
@@ -105,13 +109,12 @@ abstract contract ERC20Shares is
 
     /**
      * @dev Get the total number of shares before `snapshotId`.
-     * @param snapshotId Snapshot id before which which total shares are
-     * desired.
+     * @param snapshotId Snapshot id before which total shares are desired.
      *
      * Requirements:
      *
-     * - `snapshotId` must have be greater than 0.
-     * - `snapshotId` must have be less than or equal to the current snapshotId.
+     * - `snapshotId` must be greater than 0.
+     * - `snapshotId` must be less than or equal to the current snapshotId.
      */
     function getPastTotalShares(uint256 snapshotId) 
         public view returns (uint256)

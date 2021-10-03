@@ -19,10 +19,10 @@ import "./ERC20Shares.sol";
  * the split is done proportional to the percentage holdings of an {ERC20Shares}
  * token. Whenever the contract receives (or pays) {ERC20} tokens, it
  * increaments the sanpshot id in the {ERC20Shares} contract, and saves the new
- * snapshot id along with the `amount` of tokens received and the `from` address
- * (or `to` address when paying). Any {ERC20Shares} token holder can get his
- * share of payment proportional to his holdings of {ERC20Shares} token when the
- * payment was received by this contract. 
+ * snapshot id along with the `amount` of tokens received (or paid) and the
+ * `from` address (or `to` address when paying). Any {ERC20Shares} token holder
+ * can get his share of payment proportional to his holdings of {ERC20Shares}
+ * token at the time payment was received by this contract. 
  *
  * {ERC20PaymentSplitter} follows a _pull payment_ model. This means that
  * payments are not automatically forwarded to the accounts but kept in this
@@ -35,7 +35,7 @@ import "./ERC20Shares.sol";
  * after deploying it, grant it {SNAPSHOT_CREATOR} role in {ERC20Shares} token.
  *
  * Note In case, this contract receives any {ERC20} tokens other than the token
- * set for payments (set at build time), the owner of the contract can call 
+ * set for payments (set at build time), the owner of the contract can call
  * {drainTokens} function to transfer them to some address.
  */
 abstract contract ERC20PaymentSplitter is Context, Ownable, ReentrancyGuard {
@@ -183,7 +183,7 @@ abstract contract ERC20PaymentSplitter is Context, Ownable, ReentrancyGuard {
      * @param amount Amount of tokens to receive.
      *
      * Emits a {PaymentReceived} event.
-     * Emits a {Snapshot} event.
+     * Emits a {Snapshot} event on {ERC20Shares} contract.
      *
      * Requirements:
      *
@@ -215,7 +215,7 @@ abstract contract ERC20PaymentSplitter is Context, Ownable, ReentrancyGuard {
      * @dev Releases payment (if any) to the sender of the call.
      *
      * Emits a {PaymentReleased} event.
-     * Emits a {Snapshot} event.
+     * Emits a {Snapshot} event on {ERC20Shares} contract.
      *
      * Requirements:
      *
@@ -241,7 +241,7 @@ abstract contract ERC20PaymentSplitter is Context, Ownable, ReentrancyGuard {
     }
 
     /**
-     * @dev Sends ERC20 tokens other than the `_paymentToken` to a given address.
+     * @dev Sends {ERC20} tokens other than the `_paymentToken` to a given address.
      * @param token Address of the ERC20 token.
      * @param to Address to which the tokens are to be transferred.
      * @param amount Amount of tokens to transfer.
