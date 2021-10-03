@@ -3,56 +3,72 @@ pragma solidity ^0.8.7;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
-import "@openzeppelin/contracts/utils/math/Math.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Snapshot.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/utils/Context.sol";
 
 /**
  * @title ERC20Shares
- * @dev Extension of ERC20 to support tracking of shares (balances) of holders.
+ * @dev Extension of ERC20 to support tracking of shares (balances) of holders
+ * and totalShares (totalSupply) of the token. Uses {ERC20Snapshot} under the
+ * hood. Shares can be queried through the public accessors {getShares} and
+ * {getPastShares}. Total shares can be queried through the public accessors
+ * {getTotalShares} and {getPastTotalShares}.
  *
- * This extension keeps a history (checkpoints) of each account's shares (balances).
- * Shares can be queried through the public accessors {getShares} and {getPastShares}.
+ * This token can be used in conjunction with {ERC20PaymentSplitter} to split
+ * incoming payments (in the form of an ERC20 token) among the holders of
+ * {ERC20Shares} token. To make {ERC20PaymentSplitter} work properly, it needs
+ * to create snapshots using the function {_snapshot} of {ERC20Snapshot}. But
+ * exposing {_snapshot} publically can be dangerous. So, this contract uses
+ * {AccessControl} to allow creating snapshots to only those who have
+ * {SNAPSHOT_CREATOR} role.
+ *
+ * After deploying, {ERC20Shares} both the contract itself and the contract
+ * deployer will have the {ERC20_SHARES_ADMIN_ROLE} role. The deployer can,
+ * then, assign the {SNAPSHOT_CREATOR} role to the deployed
+ * {ERC20PaymentSplitter}. After this, the contract deployer should renounce his
+ * {ERC20_SHARES_ADMIN_ROLE} role for transparency.
  */
-abstract contract ERC20Shares is ERC20, ERC20Permit {
-    struct SharesCheckpoint {
-        uint256 fromBlock;
-        uint256 shares;
-    }
-    enum OP {
-        ADD,
-        SUB
-    }
+abstract contract ERC20Shares is 
+    Context,
+    ERC20,
+    ERC20Permit,
+    ERC20Snapshot,
+    AccessControl
+{
+    bytes32 public constant ERC20_SHARES_ADMIN_ROLE = 
+        keccak256("ERC20_SHARES_ADMIN_ROLE");
+    bytes32 public constant SNAPSHOT_CREATOR = keccak256("SNAPSHOT_CREATOR");
 
-    mapping(address => SharesCheckpoint[]) private _sharesCheckpoints;
-    SharesCheckpoint[] _totalSharesCheckpoints;
+    constructor() {
+        _setRoleAdmin(ERC20_SHARES_ADMIN_ROLE, ERC20_SHARES_ADMIN_ROLE);
+        _setRoleAdmin(SNAPSHOT_CREATOR, ERC20_SHARES_ADMIN_ROLE);
+
+        // deployer + self administration
+        _setupRole(ERC20_SHARES_ADMIN_ROLE, _msgSender());
+        _setupRole(ERC20_SHARES_ADMIN_ROLE, address(this));
+    }
 
     /**
-     * @dev Emitted when a token transfer, minting or burning results in changes to an account's shares.
-     * @param account Address whose shares have changed.
-     * @param oldShares Old shares of `account`.
-     * @param newShares New shares of `account`.
+     * @dev Get the current snapshot id.
      */
-    event SharesChanged(address indexed account, uint256 oldShares, uint256 newShares);
+    function currentSnapshotId() public view returns (uint256) {
+        return _getCurrentSnapshotId();
+    }
 
     /**
-     * @dev Get the `pos`-th shares checkpoint for `account`.
-     * @param account Address whose shares checkpoint is desired.
-     * @param pos Index of the shares checkpoint.
+     * @dev Increment the snapshot id and returns the new snapshot id.
+     *
+     * Emits a {Snapshot} event for the new snapshot id.
+     *
+     * Requirements:
+     *
+     * - The caller must have {SNAPSHOT_CREATOR} role.
      */
-    function sharesCheckpoints(address account, uint256 pos)
-        public view virtual returns (SharesCheckpoint memory)
+    function createSnapshot()
+        external onlyRole(SNAPSHOT_CREATOR) returns (uint256)
     {
-        require(pos < numSharesCheckpoints(account), "ERC20Shares: out of bounds index for checkpoints array.");
-        return _sharesCheckpoints[account][pos];
-    }
-
-    /**
-     * @dev Get number of shares checkpoints for `account`.
-     * @param account Address whose number of shares checkpoints are desired.
-     */
-    function numSharesCheckpoints(address account)
-        public view virtual returns (uint256)
-    {
-        return _sharesCheckpoints[account].length;
+        return _snapshot();
     }
 
     /**
@@ -64,22 +80,19 @@ abstract contract ERC20Shares is ERC20, ERC20Permit {
     }
 
     /**
-     * @dev Get the shares held by `account` in `blockNumber`.
+     * @dev Get the shares held by `account` before `snapshotId`.
      * @param account Address whose past shares are desired.
-     * @param blockNumber Block number for which past shares are desired.
+     * @param snapshotId Snapshot id before which past shares are desired.
      *
      * Requirements:
      *
-     * - `blockNumber` must have been already mined.
+     * - `snapshotId` must have be greater than 0.
+     * - `snapshotId` must have be less than or equal to the current snapshotId.
      */
-    function getPastShares(address account, uint256 blockNumber)
+    function getPastShares(address account, uint256 snapshotId)
         public view returns (uint256)
     {
-        require(blockNumber <= block.number, "ERC20Shares: block not yet mined");
-        if (blockNumber == block.number) {
-            return getShares(account);
-        }
-        return _sharesCheckpointsLookup(_sharesCheckpoints[account], blockNumber);
+        return balanceOfAt(account, snapshotId);
     }
 
     /**
@@ -91,143 +104,30 @@ abstract contract ERC20Shares is ERC20, ERC20Permit {
     }
 
     /**
-     * @dev Get the total number of shares in `blockNumber`.
-     * @param blockNumber Block number for which total shares are desired.
+     * @dev Get the total number of shares before `snapshotId`.
+     * @param snapshotId Snapshot id before which which total shares are
+     * desired.
      *
      * Requirements:
      *
-     * - `blockNumber` must have been already mined.
+     * - `snapshotId` must have be greater than 0.
+     * - `snapshotId` must have be less than or equal to the current snapshotId.
      */
-    function getPastTotalShares(uint256 blockNumber) 
+    function getPastTotalShares(uint256 snapshotId) 
         public view returns (uint256)
     {
-        require(blockNumber <= block.number, "ERC20Shares: block not yet mined");
-        if (blockNumber == block.number) {
-            return getTotalShares();
-        }
-        return _sharesCheckpointsLookup(_totalSharesCheckpoints, blockNumber);
+        return totalSupplyAt(snapshotId);
     }
 
     /**
-     * @dev Writes checkpoints for `from` and `to` accounts whenever shares (tokens) are transferred.
+     * @dev Override for linearization purpose only.
      * @param from Address tokens are transferred from.
      * @param to Address tokens are transferred to.
      * @param amount Amount of tokens transferred.
-     *
-     * Emits a {SharesChanged} event for both accounts.
      */
-    function _afterTokenTransfer(address from, address to, uint256 amount)
-        internal virtual override
+    function _beforeTokenTransfer(address from, address to, uint256 amount)
+        internal virtual override(ERC20, ERC20Snapshot)
     {
-        super._afterTokenTransfer(from, to, amount);
-
-        _moveShares(from, to, amount);
-    }
-
-    /**
-     * @dev Snapshots the totalShares (totalSupply) after it has been increased.
-     * @param account Address the minted tokens are sent to.
-     * @param amount Amount of tokens minted.
-     */
-    function _mint(address account, uint256 amount) internal virtual override {
-        super._mint(account, amount);
-
-        _writeSharesCheckpoint(_totalSharesCheckpoints, OP.ADD, amount);
-    }
-
-    /**
-     * @dev Snapshots the totalShares (totalSupply) after it has been decreased.
-     * @param account Address the tokens are burnt from.
-     * @param amount Amount of tokens burnt.
-     */
-    function _burn(address account, uint256 amount) internal virtual override {
-        super._burn(account, amount);
-
-        _writeSharesCheckpoint(_totalSharesCheckpoints, OP.SUB, amount);
-    }
-
-    /**
-     * @dev Writes checkpoints for new shares of `src` and `dst` accounts after
-     * a token transfer.
-     * @param src Address the tokens are transferred from.
-     * @param dst Address the tokens are transferred to.
-     * @param amount Amount of tokens transferred.
-     */
-    function _moveShares(address src, address dst, uint256 amount) private {
-        if (src != dst && amount > 0) {
-            if (src != address(0)) {
-                (uint256 oldShares, uint256 newShares) = 
-                    _writeSharesCheckpoint(_sharesCheckpoints[src], OP.SUB, amount);
-                emit SharesChanged(src, oldShares, newShares);
-            }
-
-            if (dst != address(0)) {
-                (uint256 oldShares, uint256 newShares) = 
-                    _writeSharesCheckpoint(_sharesCheckpoints[dst], OP.ADD, amount);
-                emit SharesChanged(dst, oldShares, newShares);
-            }
-        }
-    }
-
-    /**
-     * @dev Writes checkpoints when a change in shares occurs.
-     * @param ckpts Array of checkpoints to which a new checkpoint will be added.
-     * @param op Whether to increase (`ADD`) or decrease (`SUB`) the shares. See `OP` enum.
-     * @param delta Amount of change in shares.
-     */
-    function _writeSharesCheckpoint(
-        SharesCheckpoint[] storage ckpts,
-        OP op,
-        uint256 delta
-    ) private returns (uint256 oldShares, uint256 newShares) {
-        require(op == OP.ADD || op == OP.SUB, "ERC20Shares: unsupported operation while writing checkpoint.");
-
-        uint256 pos = ckpts.length;
-        oldShares = pos == 0 ? 0 : ckpts[pos - 1].shares;
-        newShares = op == OP.ADD ? oldShares + delta : oldShares - delta;
-
-        // A gaurd to avoid writing two checkpoints in the same block.
-        if (pos > 0 && ckpts[pos - 1].fromBlock == block.number) {
-            ckpts[pos - 1].shares = newShares;
-        } else {
-            ckpts.push(SharesCheckpoint({
-                fromBlock: block.number,
-                shares: newShares
-            }));
-        }
-    }
-
-    /**
-     * @dev Lookup a value in a list of (sorted) shares checkpoints.
-     * @param ckpts An array of checkpoints to search for a particular checkpoint.
-     * @param blockNumber Block number in which the number of shares are desired.
-     */
-    function _sharesCheckpointsLookup(
-        SharesCheckpoint[] storage ckpts,
-        uint256 blockNumber
-    ) private view returns (uint256) {
-        // We run a binary search to look for the earliest checkpoint taken after `blockNumber`.
-        //
-        // During the loop, the index of the wanted checkpoint remains in the range [low-1, high).
-        // With each iteration, either `low` or `high` is moved towards the middle of the range to maintain the invariant.
-        // - If the middle checkpoint is after `blockNumber`, we look in [low, mid)
-        // - If the middle checkpoint is before or equal to `blockNumber`, we look in [mid+1, high)
-        // Once we reach a single value (when low == high), we've found the right checkpoint at the index high-1, if not
-        // out of bounds (in which case we're looking too far in the past and the result is 0).
-        // Note that if the latest checkpoint available is exactly for `blockNumber`, we end up with an index that is
-        // past the end of the array, so we technically don't find a checkpoint after `blockNumber`, but it works out
-        // the same.
-        uint256 high = ckpts.length;
-        uint256 low = 0;
-        while (low < high) {
-            uint256 mid = Math.average(low, high);
-            if (ckpts[mid].fromBlock > blockNumber) {
-                high = mid;
-            } else {
-                low = mid + 1;
-            }
-        }
-
-        return high == 0 ? 0 : ckpts[high - 1].shares;
+        super._beforeTokenTransfer(from, to, amount);
     }
 }

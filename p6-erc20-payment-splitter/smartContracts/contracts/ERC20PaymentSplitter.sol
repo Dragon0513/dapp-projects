@@ -17,32 +17,37 @@ import "./ERC20Shares.sol";
  *
  * The payments are received and released in the form of an {ERC20} token. While
  * the split is done proportional to the percentage holdings of an {ERC20Shares}
- * token. Whenever the contract receives {ERC20} tokens, it takes a snapshot of
- * the total supply of the {ERC20Shares} token in that block. Any {ERC20Shares}
- * token holder can get his share of payment proportional to his holdings of
- * {ERC20Shares} token when the payment was received by this contract. 
+ * token. Whenever the contract receives (or pays) {ERC20} tokens, it
+ * increaments the sanpshot id in the {ERC20Shares} contract, and saves the new
+ * snapshot id along with the `amount` of tokens received and the `from` address
+ * (or `to` address when paying). Any {ERC20Shares} token holder can get his
+ * share of payment proportional to his holdings of {ERC20Shares} token when the
+ * payment was received by this contract. 
  *
  * {ERC20PaymentSplitter} follows a _pull payment_ model. This means that
  * payments are not automatically forwarded to the accounts but kept in this
  * contract, and the actual transfer is triggered as a separate step by calling
  * the {releasePayment} function.
  *
+ * Note In order to receive or release payments, {ERC20PaymentSplitter} needs to
+ * increament the snapshot id in the {ERC20Shares} token. For this
+ * {ERC20PaymentSplitter} needs {SNAPSHOT_CREATOR} role in {ERC20Shares}. So,
+ * after deploying it, grant it {SNAPSHOT_CREATOR} role in {ERC20Shares} token.
+ *
  * Note In case, this contract receives any {ERC20} tokens other than the token
  * set for payments (set at build time), the owner of the contract can call 
  * {drainTokens} function to transfer them to some address.
- *
- * _Available since v4.x._
  */
 abstract contract ERC20PaymentSplitter is Context, Ownable, ReentrancyGuard {
     struct Received {
-        uint256 inBlock;
+        uint256 snapshotId;
         uint256 amount;
-        uint256 totalShares;
         address from;
     }
     struct Payment {
-        uint256 inBlock;
+        uint256 snapshotId;
         uint256 amount;
+        address to;
     }
 
     Received[] private _received;
@@ -100,7 +105,7 @@ abstract contract ERC20PaymentSplitter is Context, Ownable, ReentrancyGuard {
     /**
      * @dev Get the total number of payments released to `payee` so far.
      */
-    function paymentsCount(address payee) public view returns (uint256) {
+    function releasedPaymentsCount(address payee) public view returns (uint256) {
         return _payments[payee].length;
     }
 
@@ -113,8 +118,8 @@ abstract contract ERC20PaymentSplitter is Context, Ownable, ReentrancyGuard {
      *
      * - `pos` must be a valid index.
      */
-    function paymentsData(address payee, uint256 pos) public view returns (Payment memory) {
-        require(pos < paymentsCount(payee), "ERC20PaymentSplitter: out of bounds index.");
+    function releasedPaymentsData(address payee, uint256 pos) public view returns (Payment memory) {
+        require(pos < releasedPaymentsCount(payee), "ERC20PaymentSplitter: out of bounds index.");
         return _payments[payee][pos];
     }
 
@@ -136,7 +141,7 @@ abstract contract ERC20PaymentSplitter is Context, Ownable, ReentrancyGuard {
     /**
      * @dev Returns the number of payments received so far.
      */
-    function receiveCount() public view returns (uint256) {
+    function receivedPaymentsCount() public view returns (uint256) {
         return _received.length;
     }
 
@@ -148,8 +153,8 @@ abstract contract ERC20PaymentSplitter is Context, Ownable, ReentrancyGuard {
      *
      * - `pos` must be a valid index.
      */
-    function receiveData(uint256 pos) public view returns (Received memory) {
-        require(pos < receiveCount(), "ERC20PaymentSplitter: out of bounds index.");
+    function receivedPaymentsData(uint256 pos) public view returns (Received memory) {
+        require(pos < receivedPaymentsCount(), "ERC20PaymentSplitter: out of bounds index.");
         return _received[pos];
     }
 
@@ -159,15 +164,16 @@ abstract contract ERC20PaymentSplitter is Context, Ownable, ReentrancyGuard {
      */
     function paymentPending(address payee) public view returns(uint256 currentPayment) {
         Payment[] storage payments = _payments[payee];
-        uint256 lastPaymentBlock = payments.length == 0 ? 0 : payments[payments.length - 1].inBlock;
+        uint256 lastPaymentSnapshot = payments.length == 0 ? 0 : payments[payments.length - 1].snapshotId;
 
         for (uint256 i = _received.length; i > 0; --i) {
-            uint256 receiptBlock = _received[i - 1].inBlock;
-            if (lastPaymentBlock > receiptBlock) {
+            uint256 receiveSnapshot = _received[i - 1].snapshotId;
+            if (lastPaymentSnapshot > receiveSnapshot) {
                 break;
             }
-            uint256 sharesInReceiptBlock = _sharesToken.getPastShares(payee, receiptBlock);
-            currentPayment += (_received[i - 1].amount * sharesInReceiptBlock) / _received[i - 1].totalShares;
+            uint256 sharesInReceiveSnapshot = _sharesToken.getPastShares(payee, receiveSnapshot);
+            uint256 totalSharesInReceiveSnapshot = _sharesToken.getPastTotalShares(receiveSnapshot);
+            currentPayment += (_received[i - 1].amount * sharesInReceiveSnapshot) / totalSharesInReceiveSnapshot;
         }
     }
 
@@ -176,24 +182,31 @@ abstract contract ERC20PaymentSplitter is Context, Ownable, ReentrancyGuard {
      * @param sender Address of the sender.
      * @param amount Amount of tokens to receive.
      *
+     * Emits a {PaymentReceived} event.
+     * Emits a {Snapshot} event.
+     *
      * Requirements:
      *
+     * - Total shares must be non-zero at the time of receiving payment. Else,
+     *   payment will get locked in this contract forever with no one to claim
+     *   it.
      * - `amount` must be non-zero.
      * - Sender must have already allowed {ERC20PaymentSplitter} to draw
      *   `amount` tokens from `sender` address.
+     * - This contract must have {SNAPSHOT_CREATOR} role in {ERC20Shares}.
      */
     function receivePayment(address sender, uint256 amount) external {
+        require(_sharesToken.getTotalShares() > 0, "ERC20PaymentSplitter: no share holder");
         require(amount > 0, "ERC20PaymentSplitter: receiving zero tokens.");
         _paymentToken.transferFrom(sender, address(this), amount);
         emit PaymentReceived(sender, amount);
         
         _totalReceived += amount;
         _totalReceivedFrom[sender] += amount;
-        uint256 currentBlock = block.number;
+        uint256 nextSnapshotId = _sharesToken.createSnapshot();
         _received.push(Received({
-            inBlock: currentBlock,
+            snapshotId: nextSnapshotId,
             amount: amount,
-            totalShares: _sharesToken.totalSupply(),
             from: sender
         }));
     }
@@ -201,24 +214,30 @@ abstract contract ERC20PaymentSplitter is Context, Ownable, ReentrancyGuard {
     /**
      * @dev Releases payment (if any) to the sender of the call.
      *
+     * Emits a {PaymentReleased} event.
+     * Emits a {Snapshot} event.
+     *
      * Requirements:
      *
      * - Sender must have non-zero pending payment.
+     * - This contract must have {SNAPSHOT_CREATOR} role in {ERC20Shares}.
      */
     function releasePayment() public virtual nonReentrant {
         address payee = _msgSender();
         uint256 payment = paymentPending(payee);
         require(payment > 0, "ERC20PaymentSplitter: account is not due any payment");
 
-        _payments[payee].push(Payment({
-            inBlock: block.number,
-            amount: payment
-        }));
-        _totalPaidTo[payee] += payment;
-        _totalPaid += payment;
-
         _paymentToken.transfer(payee, payment);
         emit PaymentReleased(payee, payment);
+
+        _totalPaid += payment;
+        _totalPaidTo[payee] += payment;
+        uint256 nextSnapshotId = _sharesToken.createSnapshot();
+        _payments[payee].push(Payment({
+            snapshotId: nextSnapshotId,
+            amount: payment,
+            to: payee
+        }));
     }
 
     /**
