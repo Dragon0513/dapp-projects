@@ -68,9 +68,9 @@ const About: FC = () => {
         total supply snapshots as the shares held by addresses and the total
         shares respectively at different points of time. Whenever a payment is
         received, each user gets a part of the payment in proportion to her/his
-        balance of Shares Token. However, the user doesn't receive the payment
-        automatically. The user can get all the accumulated pending payments
-        anytime.
+        balance of Shares Token at that point of time. However, the user doesn't
+        receive the payment automatically. The user can get all the accumulated
+        pending payments anytime.
       </p>
       <p className="centered">Benefits</p>
       <ol>
