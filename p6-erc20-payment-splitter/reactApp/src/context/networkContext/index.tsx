@@ -206,7 +206,7 @@ export const NetworkContextProvider: FC = ({ children }) => {
       if (!connected || !web3 || !sharesToken || !fakeDai) {
         throw ConnectToMetaMaskError;
       }
-      sharesToken.events.SharesChanged(updateBalances);
+      sharesToken.events.Transfer(updateBalances);
       fakeDai.events.Transfer(updateBalances);
     });
   };

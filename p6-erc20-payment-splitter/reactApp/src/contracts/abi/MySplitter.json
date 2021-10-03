@@ -103,53 +103,33 @@
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "payee", "type": "address" }
+      { "internalType": "address", "name": "sender", "type": "address" },
+      { "internalType": "uint256", "name": "amount", "type": "uint256" }
     ],
-    "name": "paymentsCount",
-    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      { "internalType": "address", "name": "payee", "type": "address" },
-      { "internalType": "uint256", "name": "pos", "type": "uint256" }
-    ],
-    "name": "paymentsData",
-    "outputs": [
-      {
-        "components": [
-          { "internalType": "uint256", "name": "inBlock", "type": "uint256" },
-          { "internalType": "uint256", "name": "amount", "type": "uint256" }
-        ],
-        "internalType": "struct ERC20PaymentSplitter.Payment",
-        "name": "",
-        "type": "tuple"
-      }
-    ],
-    "stateMutability": "view",
+    "name": "receivePayment",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
     "inputs": [],
-    "name": "receiveCount",
+    "name": "receivedPaymentsCount",
     "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [{ "internalType": "uint256", "name": "pos", "type": "uint256" }],
-    "name": "receiveData",
+    "name": "receivedPaymentsData",
     "outputs": [
       {
         "components": [
-          { "internalType": "uint256", "name": "inBlock", "type": "uint256" },
-          { "internalType": "uint256", "name": "amount", "type": "uint256" },
           {
             "internalType": "uint256",
-            "name": "totalShares",
+            "name": "snapshotId",
             "type": "uint256"
           },
+          { "internalType": "uint256", "name": "amount", "type": "uint256" },
           { "internalType": "address", "name": "from", "type": "address" }
         ],
         "internalType": "struct ERC20PaymentSplitter.Received",
@@ -161,20 +141,44 @@
     "type": "function"
   },
   {
-    "inputs": [
-      { "internalType": "address", "name": "sender", "type": "address" },
-      { "internalType": "uint256", "name": "amount", "type": "uint256" }
-    ],
-    "name": "receivePayment",
+    "inputs": [],
+    "name": "releasePayment",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
   {
-    "inputs": [],
-    "name": "releasePayment",
-    "outputs": [],
-    "stateMutability": "nonpayable",
+    "inputs": [
+      { "internalType": "address", "name": "payee", "type": "address" }
+    ],
+    "name": "releasedPaymentsCount",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "payee", "type": "address" },
+      { "internalType": "uint256", "name": "pos", "type": "uint256" }
+    ],
+    "name": "releasedPaymentsData",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "snapshotId",
+            "type": "uint256"
+          },
+          { "internalType": "uint256", "name": "amount", "type": "uint256" },
+          { "internalType": "address", "name": "to", "type": "address" }
+        ],
+        "internalType": "struct ERC20PaymentSplitter.Payment",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
     "type": "function"
   },
   {
