@@ -6,3 +6,5 @@
 4.  [Create a Dummy DEX](./p4-dex)
 5.  [Create a DAO with Openzeppelin](./p5-dao)
 6.  [Create a ERC20PaymentSplitter](./p6-erc20-payment-splitter)
+7.  [Pet Shop with Arbitrum](./p7-pet-shop-arbitrum)
+8.  [Elections with Arbitrum](./p8-election-arbitrum)
