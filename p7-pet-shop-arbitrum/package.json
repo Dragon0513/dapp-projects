@@ -1,0 +1,35 @@
+{
+  "name": "p6-erc20-payment-splitter",
+  "private": false,
+  "description": "A payment splitter for splitting received ERC20 tokens among the holders of another ERC20 token.",
+  "version": "0.1.0",
+  "author": "Mian Muhammad Sharjeel Safdar <miansharjeelsafdar@gmail.com>",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "migrate": "truffle migrate",
+    "test": "truffle test",
+    "compile": "truffle compile",
+    "console": "truffle console"
+  },
+  "dependencies": {
+    "@truffle/hdwallet-provider": "^1.5.0",
+    "arb-ethers-web3-bridge": "^0.7.3"
+  },
+  "devDependencies": {
+    "dotenv": "^10.0.0"
+  },
+  "keywords": [
+    "truffle",
+    "ethereum",
+    "smart-contracts",
+    "solidity"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SharjeelSafdar/dapp-projects"
+  },
+  "bugs": {
+    "url": "https://github.com/SharjeelSafdar/dapp-projects/issues"
+  }
+}
