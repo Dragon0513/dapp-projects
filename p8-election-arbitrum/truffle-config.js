@@ -95,16 +95,14 @@ module.exports = {
     //   skipDryRun: true,
     // },
     arbitrum_rinkeby: {
-      provider: () => {
-        return wrapProvider(
-          new HDWalletProvider(MNEMONIC, "https://rinkeby.arbitrum.io/rpc")
-        );
-      },
+      provider: () =>
+        new HDWalletProvider(MNEMONIC, "https://rinkeby.arbitrum.io/rpc"),
       network_id: 421611,
       gasPrice: 10e9,
       confirmations: 2,
       timeoutBlocks: 200,
       skipDryRun: true,
+      networkCheckTimeout: 1000000000,
     },
     arbitrum_local: {
       provider: () => {
