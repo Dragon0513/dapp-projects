@@ -57,7 +57,7 @@ const main = async () => {
     { value: ethToL2DepositAmount }
   );
   const rec = await depositTx.wait();
-  console.warn("deposit L1 receipt is:", rec.transactionHash);
+  console.warn("Deposit L1 receipt is:", rec.transactionHash);
 
   /**
    * With the transaction confirmed on L1, we now wait and check for the L2 side (i.e., balance credited to L2) to be confirmed as well.
@@ -66,9 +66,9 @@ const main = async () => {
    */
   const seqNumArr = await bridge.getInboxSeqNumFromContractTransaction(rec);
   if (seqNumArr === undefined) {
-    throw new Error("no seq num");
+    throw new Error("No seq num");
   }
-  console.log("inbox sequence number is found!");
+  console.log("Inbox sequence number is found!");
   /**
    * Note that a single txn could (in theory) trigger many l1-to-l2 messages; we know ours only triggered 1 tho.
    */
@@ -83,7 +83,7 @@ const main = async () => {
   /**
    * ... and now we wait. Here we're waiting for the Sequencer to include the L2 message in its off-chain queue. The Sequencer should include it in under 10 minutes.
    */
-  console.log("waiting for l2 transaction:");
+  console.log("Waiting for L2 transaction:");
   const l2TxnRec = await l2Provider.waitForTransaction(
     l2TxHash,
     undefined,
@@ -98,7 +98,7 @@ const main = async () => {
   const l2WalletUpdatedEthBalance = await bridge.getL2EthBalance();
 
   console.log(
-    `your L2 balance is updated from ${l2WalletInitialEthBalance.toString()} to ${l2WalletUpdatedEthBalance.toString()}`
+    `Your L2 balance is updated from ${l2WalletInitialEthBalance.toString()} to ${l2WalletUpdatedEthBalance.toString()}`
   );
 };
 

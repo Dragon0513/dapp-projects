@@ -2,7 +2,7 @@ import { ethers } from "hardhat";
 
 async function main() {
   const Deposit = await ethers.getContractFactory("Deposit");
-  const deposit = await Deposit.deploy(process.env.INBOX_ADDR);
+  const deposit = await Deposit.deploy(process.env.INBOX_ADDR as string);
 
   await deposit.deployed();
   console.log("Deposit deployed to:", deposit.address);

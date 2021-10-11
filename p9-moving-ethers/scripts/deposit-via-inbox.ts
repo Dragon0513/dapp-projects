@@ -21,7 +21,7 @@ const l2Wallet = new Wallet(DEVNET_PRIVKEY, l2Provider);
 const ethToL2DepositAmount = parseEther("0.0001");
 
 async function main() {
-  console.log("('Deposit Eth via the Inbox')");
+  console.log("Deposit Eth via the Inbox");
   /**
    * Use wallets to create an arb-ts bridge instance
    * We'll use bridge for its convenience methods around checking txn statuses and ETH balances

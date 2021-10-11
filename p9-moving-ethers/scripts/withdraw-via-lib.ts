@@ -17,7 +17,7 @@ const l2Wallet = new Wallet(DEVNET_PRIVKEY, l2Provider);
 /**
  * Set the amount to be withdrawn from L2 (in wei)
  */
-const ethFromL2WithdrawAmount = parseEther("0.000001");
+const ethFromL2WithdrawAmount = parseEther("0.001");
 
 const main = async () => {
   console.log("Withdraw Eth via arb-ts");
@@ -34,7 +34,7 @@ const main = async () => {
 
   if (l2WalletInitialEthBalance.lt(ethFromL2WithdrawAmount)) {
     console.log(
-      `Oops - not enough ether; fund your account L2 wallet currently ${l2Wallet.address} with at least 0.000001 ether`
+      `Oops - not enough ether; fund your account L2 wallet currently ${l2Wallet.address} with at least 0.001 ether`
     );
     process.exit(1);
   }
@@ -61,6 +61,12 @@ const main = async () => {
 
   console.log(
     `To to claim funds (after dispute period), see outbox-execute repo ✌️`
+  );
+
+  const l2WalletUpdatedEthBalance = await bridge.getL2EthBalance();
+
+  console.log(
+    `Your L2 balance is updated from ${l2WalletInitialEthBalance.toString()} to ${l2WalletUpdatedEthBalance.toString()}`
   );
 };
 
