@@ -1,0 +1,25 @@
+{
+  "name": "p13b-executing-outbox-messages",
+  "private": false,
+  "version": "1.0.0",
+  "description": "Learning how to claim the assets you have withdrawn from L2.",
+  "author": "Mian Muhammad Sharjeel Safdar <miansharjeelsafdar@gmail.com>",
+  "main": "index.js",
+  "dependencies": {
+    "arb-ts": "0.0.42"
+  },
+  "devDependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.0.2",
+    "@nomiclabs/hardhat-waffle": "^2.0.1",
+    "@types/node": "^16.10.2",
+    "dotenv": "^10.0.0",
+    "ethereum-waffle": "^3.4.0",
+    "ethers": "^5.4.7",
+    "hardhat": "^2.6.4",
+    "ts-node": "^10.2.1",
+    "typechain": "^5.1.2",
+    "typescript": "^4.4.3"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/SharjeelSafdar/dapp-projects"
+}
