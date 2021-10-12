@@ -5,7 +5,6 @@ import { Bridge } from "arb-ts";
 const RINKEBY_RPC = process.env.RINKEBY_RPC as string;
 const ARBITRUM_TESTNET_RPC = process.env.ARBITRUM_TESTNET_RPC as string;
 const DEVNET_PRIVKEY = process.env.DEVNET_PRIVKEY as string;
-const INBOX_ADDR = process.env.INBOX_ADDR as string;
 
 /**
  * Set up: instantiate L1 / L2 wallets connected to providers
@@ -18,7 +17,7 @@ const l2Wallet = new Wallet(DEVNET_PRIVKEY, l2Provider);
 /**
  * Set the amount of token to be deposited in L2
  */
-const tokenDepositAmount = BigNumber.from(50);
+const tokenDepositAmount = BigNumber.from(50000);
 
 const main = async () => {
   console.log("Deposit token using arb-ts");
@@ -31,14 +30,13 @@ const main = async () => {
 
   /**
    * For the purpose of our tests, here we deploy a standard ERC20 token (DappToken) to L1
-   * It sends it's deployer (us) the initial supply of 1000000000000000
+   * It sends it's deployer (us) the initial supply of 100000000
    */
-
-  const L1DappToken = await (
-    await ethers.getContractFactory("DappToken")
-  ).connect(l1Wallet);
+  const L1DappToken = (await ethers.getContractFactory("DappToken")).connect(
+    l1Wallet
+  );
   console.log("Deploying the test DappToken to L1");
-  const l1DappToken = await L1DappToken.deploy(1000000000000000);
+  const l1DappToken = await L1DappToken.deploy(100000000);
   await l1DappToken.deployed();
   console.log(`DappToken is deployed to L1 at ${l1DappToken.address}`);
   const erc20Address = l1DappToken.address;
@@ -54,14 +52,11 @@ const main = async () => {
   );
 
   /**
-   * Deposit DappToken to L2 using Bridge. This will escrows funds in the Gateway contract on L1, and send a message to mint tokens on L2.
+   * Deposit DappToken to L2 using Bridge. This will escrow funds in the Gateway contract on L1, and send a message to mint tokens on L2.
    * The bridge.deposit method handles computing the necessary fees for automatic-execution of retryable tickets — maxSubmission cost & l2 gas price * gas — and will automatically forward the fees to L2 as callvalue
    * Also note that since this is the first DappToken deposit onto L2, a standard Arb ERC20 contract will automatically be deployed.
    */
-  const depositTx = await bridge.deposit({
-    erc20L1Address: erc20Address,
-    amount: tokenDepositAmount,
-  });
+  const depositTx = await bridge.deposit(erc20Address, tokenDepositAmount);
   const depositRec = await depositTx.wait();
 
   /**
@@ -101,7 +96,7 @@ const main = async () => {
   /** Now, we have to wait for the L2 tx to go through; i.e., for the Sequencer to include it in its off-chain queue. This should take ~10 minutes at most
    * If the redeem succeeds, that implies that the retryableTicket has been included, and autoRedeem succeeded as well
    */
-  console.log("waiting for L2 transaction:");
+  console.log("Waiting for L2 transaction:");
   const l2TxnRec = await l2Provider.waitForTransaction(
     redeemTransaction,
     undefined,
@@ -116,11 +111,12 @@ const main = async () => {
    * Not that our txn has succeeded, we know that a token contract has been deployed on L2, and our tokens have been deposited onto it.
    * Let's confirm our new token balance on L2!
    */
-
   const l2Data = await bridge.getAndUpdateL2TokenData(erc20Address);
   const l2WalletTokenBalance = l2Data && l2Data.ERC20 && l2Data.ERC20.balance;
   console.log(
-    `your l2Wallet has ${l2WalletTokenBalance.toString()} DappToken now!`
+    `Your l2Wallet has ${
+      l2WalletTokenBalance ? l2WalletTokenBalance.toString() : 0
+    } DappToken now!`
   );
 };
 

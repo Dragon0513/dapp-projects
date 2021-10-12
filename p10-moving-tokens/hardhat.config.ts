@@ -3,6 +3,7 @@ import "@nomiclabs/hardhat-waffle";
 import "@typechain/hardhat";
 import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-waffle";
+import "@nomiclabs/hardhat-etherscan";
 import dotenv from "dotenv";
 
 dotenv.config({ path: "./.env" });
@@ -79,6 +80,9 @@ const config: HardhatUserConfig = {
         runs: 200,
       },
     },
+  },
+  etherscan: {
+    apiKey: process.env.ETHERSCAN_API_KEY,
   },
   paths: {
     sources: "./contracts",
