@@ -2,7 +2,7 @@
 
 This project demonstrates moving a token from Ethereum (Layer 1) into the Arbitrum (Layer 2) chain and vice versa using the Standard Token Gateway in Arbitrum's token bridging system.
 
-Here, we deploy a demo token and trigger a deposit; by default, the deposit will be routed through the standard ERC20 gateway, where on initial deposit, a standard arb erc20 contract will automatically be deployed to L2. We use our arb-ts library to initiate and verify the deposit.
+Here, we deploy a demo token and trigger a deposit; by default, the deposit will be routed through the standard ERC20 gateway, where on initial deposit, a standard arb ERC20 contract will automatically be deployed to L2. We use our arb-ts library to initiate and verify the deposit.
 
 Then, we use these new tokens to trigger a withdrawal back to L1.
 
