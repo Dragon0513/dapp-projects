@@ -1,5 +1,5 @@
 {
-  "name": "p14-address-table",
+  "name": "p13-address-table",
   "private": false,
   "version": "1.0.0",
   "description": "Learning how to use address table contracts to reduce gas costs on Arbitrum.",

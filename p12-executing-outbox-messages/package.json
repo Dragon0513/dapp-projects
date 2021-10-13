@@ -1,5 +1,5 @@
 {
-  "name": "p13b-executing-outbox-messages",
+  "name": "p12-executing-outbox-messages",
   "private": false,
   "version": "1.0.0",
   "description": "Learning how to claim the assets you have withdrawn from L2.",
