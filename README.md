@@ -13,3 +13,4 @@
 11. [Arbitrum Message Passing System](./p11-arbitrum-message-passing-system)
 12. [Executing Outbox Messages](./p12-executing-outbox-messages)
 13. [Using Address Table to Reduce Gas Costs](./p13-address-table)
+14. [Chainlink VRF](./p14-chainlink-vrf)
