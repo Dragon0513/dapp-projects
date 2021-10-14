@@ -20,7 +20,7 @@ const l2Wallet = new Wallet(WALLET_PRIVATE_KEY, l2Provider);
 const main = async () => {
   console.log("Outbox Execution");
   const txnHash =
-    "0x58be622ce7b513b00d20d7ffc0aadb0993e58617a6826ffc7dbc757aed6fd597";
+    "0xba53225eb9ed117a5b70bea31e22b43103a79e9abcfbcd10f8426f7a227f75ef";
 
   /**
    * We start with a txn hash; we assume this is transaction that triggered an
