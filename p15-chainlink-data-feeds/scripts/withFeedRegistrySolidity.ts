@@ -2,7 +2,7 @@ import hre from "hardhat";
 import { BigNumber } from "@ethersproject/bignumber";
 import { FeedRegistryConsumer__factory } from "../typechain/factories/FeedRegistryConsumer__factory";
 
-const FEED_REGISTRY_CONSUMER = process.env.DATA_FEED_CONSUMER as string;
+const FEED_REGISTRY_CONSUMER = process.env.FEED_REGISTRY_CONSUMER as string;
 
 const main = async () => {
   console.log(`Fetching latest ETH price in USD... 🤑`);
@@ -29,7 +29,7 @@ const main = async () => {
   // ******************** Historical Price ********************
 
   console.log(`\nHistorical ETH Price Feed:`);
-  const validRoundId = BigNumber.from("36893488147419115558");
+  const validRoundId = BigNumber.from("18446744073709561155");
   const historicalPrice =
     await feedRegistryConsumer.functions.getHistoricalEthUsdPrice(validRoundId);
   console.log(`\tRound ID: ${historicalPrice.roundId}`);
