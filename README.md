@@ -14,3 +14,4 @@
 12. [Executing Outbox Messages](./p12-executing-outbox-messages)
 13. [Using Address Table to Reduce Gas Costs](./p13-address-table)
 14. [Chainlink VRF](./p14-chainlink-vrf)
+15. [Chainlink Data Feeds and Feed Registry](./p15-chainlink-data-feeds)
