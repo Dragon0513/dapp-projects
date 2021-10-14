@@ -17,8 +17,10 @@ const main = async () => {
   const latestPrice = await dataFeedConsumer.functions.getLatestPrice();
   console.log(`\tRound ID: ${latestPrice.roundID}`);
   console.log(`\tLatest Price: $ ${+latestPrice.price.toString() / 10 ** 8}`);
-  console.log(`\tStarted At: ${latestPrice.startedAt}`);
-  console.log(`\tTimestamp: ${latestPrice.timestamp}`);
+  let timestamp = new Date(+latestPrice.startedAt.toString() * 1000);
+  console.log(`\tStarted At: ${timestamp.toString()}`);
+  timestamp = new Date(+latestPrice.timestamp.toString() * 1000);
+  console.log(`\tTimestamp: ${timestamp.toString()}`);
   console.log(`\tAnswered In Round: ${latestPrice.answeredInRound}`);
 
   console.log(`\nHistorical BTC Price Feed:`);
@@ -30,8 +32,10 @@ const main = async () => {
   console.log(
     `\tLatest Price: $ ${+historicalPrice.price.toString() / 10 ** 8}`
   );
-  console.log(`\tStarted At: ${historicalPrice.startedAt}`);
-  console.log(`\tTimestamp: ${historicalPrice.timestamp}`);
+  timestamp = new Date(+historicalPrice.startedAt.toString() * 1000);
+  console.log(`\tStarted At: ${timestamp.toString()}`);
+  timestamp = new Date(+historicalPrice.timestamp.toString() * 1000);
+  console.log(`\tTimestamp: ${timestamp.toString()}`);
   console.log(`\tAnswered In Round: ${historicalPrice.answeredInRound}`);
 };
 
