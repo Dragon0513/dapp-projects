@@ -10,7 +10,9 @@ const main = async () => {
   ).connect(signers[0]);
   const dataFeedConsumer = await DataFeedConsumer.deploy();
   await dataFeedConsumer.deployed();
-  console.log(`Deployed MyRNG contract at ${dataFeedConsumer.address}`);
+  console.log(
+    `Deployed DataFeedConsumer contract at ${dataFeedConsumer.address}`
+  );
   console.log(`Deployer Address: ${dataFeedConsumer.deployTransaction.from}`);
 };
 
